@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSD Tracker · ยื่นกรมพัฒฯ 2569</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#CC0000; --red-dark:#A30000; --ink:#1A1A1A; --sub:#6B6B6B;
+  --line:#E4E4E4; --bg:#F7F7F7; --card:#FFFFFF;
+  --ok:#1E8E3E; --wait:#B26A00; --none:#9AA0A6; --alert:#D93025;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Prompt',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;font-weight:300}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:13px}
+input,select,textarea{font-family:inherit;font-size:13px;font-weight:300;border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;background:#fff}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--red);outline-offset:-1px;border-color:transparent}
+label{font-size:12px;color:var(--sub);display:block;margin-bottom:3px}
+
+header{background:var(--card);border-bottom:2px solid var(--red);padding:12px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;flex-wrap:wrap}
+header h1{font-size:16px;font-weight:600}
+header h1 span{color:var(--red)}
+.spacer{flex:1}
+#whoami{width:auto;min-width:150px}
+.btn{padding:7px 14px;border-radius:4px;font-weight:400}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:var(--red-dark)}
+.btn-ghost{border:1px solid var(--line);background:#fff}
+.btn-ghost:hover{border-color:var(--sub)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+main{max-width:1200px;margin:0 auto;padding:18px 20px 60px}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+#syncState{font-size:12px;color:var(--sub)}
+.search{width:220px}
+
+/* company filter chips */
+.cofil{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff}
+.cofil button{padding:7px 14px}
+.cofil button.on{background:var(--red);color:#fff}
+
+/* notification center */
+#bellWrap{position:relative}
+#bellBtn{width:36px;height:36px;border:1px solid var(--line);border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+#bellBtn:hover{border-color:var(--sub)}
+#bellBadge{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--alert);color:#fff;font-size:10.5px;font-weight:500;display:none;align-items:center;justify-content:center;border:2px solid #fff}
+#notifPanel{position:absolute;top:44px;right:0;width:360px;max-height:70vh;overflow-y:auto;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.16);display:none;z-index:40}
+#notifPanel.open{display:block}
+.np-head{padding:13px 16px 9px;font-size:13px;font-weight:600}
+.np-empty{padding:26px 16px;text-align:center;color:var(--sub);font-size:12.5px}
+.np-item{display:flex;gap:10px;padding:10px 16px;cursor:pointer;align-items:flex-start}
+.np-item:hover{background:#F5F5F7}
+.np-item+.np-item{border-top:1px solid #F0F0F2}
+.np-ico{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.np-ico.warn{background:var(--wait)}
+.np-ico.hot{background:var(--alert)}
+.np-txt{flex:1;min-width:0}
+.np-t1{font-size:12.5px;font-weight:500;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.np-t2{font-size:11.5px;color:var(--sub);line-height:1.45;display:block}
+.np-when{font-size:11px;color:var(--sub);white-space:nowrap;margin-top:2px}
+.np-sect{padding:9px 16px 4px;font-size:10.5px;font-weight:500;color:var(--sub);text-transform:uppercase;letter-spacing:.05em}
+
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+th{font-size:11px;font-weight:500;color:var(--sub);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:#FCFCFC;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#FFF6F6}
+tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
+.cname{font-weight:400;max-width:300px}
+.cdate{white-space:nowrap;font-size:12.5px;color:var(--sub)}
+.mrow td{background:#FCFCFC;font-size:11px;font-weight:500;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;cursor:default;padding:7px 10px}
+
+.co{display:inline-block;font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.co.TH{background:#FDE7E7;color:var(--red)}
+.co.HRST{background:#E5EFFA;color:#1A5CA8}
+.co.EGAS{background:#E6F4EA;color:var(--ok)}
+
+.dots{display:flex;gap:5px}
+.dot{width:11px;height:11px;border-radius:50%;background:#E9E9E9;border:1px solid #DADADA}
+.dot.ok{background:var(--ok);border-color:var(--ok)}
+.dot.wait{background:#FFD9A0;border-color:var(--wait)}
+.dot.hot{background:var(--alert);border-color:var(--alert)}
+.chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#EFEFEF;color:var(--sub);white-space:nowrap}
+.chip.ok{background:#E6F4EA;color:var(--ok)}
+.chip.wait{background:#FFF3E0;color:var(--wait)}
+.chip.alert{background:#FDE7E7;color:var(--alert);font-weight:400}
+
+/* drawer */
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:20}
+#ov.open{display:block}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--card);z-index:21;transform:translateX(100%);transition:transform .2s;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.12)}
+#drawer.open{transform:none}
+.dhead{padding:16px 20px;border-bottom:2px solid var(--red);display:flex;align-items:flex-start;gap:10px;position:sticky;top:0;background:var(--card);z-index:2}
+.dhead h2{font-size:15px;font-weight:600;flex:1;line-height:1.35}
+.dbody{padding:16px 20px 40px}
+.sect{margin-bottom:20px}
+.sect h3{font-size:12px;font-weight:500;color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.step{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.step:last-child{border-bottom:none}
+.step .nm{flex:1}
+.step input[type=checkbox]{width:16px;height:16px;accent-color:var(--red)}
+.step .ts{font-size:11px;color:var(--sub)}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-start;justify-content:center;z-index:30;overflow-y:auto;padding:30px 12px}
+.modal.open{display:flex}
+.mcard{background:#fff;border-radius:8px;width:min(560px,100%);padding:22px}
+.mcard h2{font-size:15px;font-weight:600;margin-bottom:14px}
+.mcard h2 span{color:var(--red)}
+.frow{margin-bottom:10px}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.note{font-size:12px;color:var(--sub);line-height:1.6}
+.urow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.urow:last-child{border-bottom:none}
+.urow .tag{font-size:10.5px;padding:2px 8px;border-radius:10px;background:#FDE7E7;color:var(--red);font-weight:500}
+.urow .tag.sup{background:#EFEFEF;color:var(--sub)}
+.urow .lk{margin-left:auto;font-size:11px;color:var(--sub)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 18px;border-radius:5px;font-size:13px;display:none;z-index:50}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>DSD</span> Tracker · ยื่นกรมพัฒฯ 2569</h1>
+  <div class="spacer"></div>
+  <div id="bellWrap">
+    <button id="bellBtn" onclick="toggleNotif(event)" title="การแจ้งเตือน">&#128276;</button>
+    <span id="bellBadge"></span>
+    <div id="notifPanel"></div>
+  </div>
+  <select id="whoami"><option value="">— เลือก User —</option></select>
+  <button class="btn btn-red" id="lockBtn" onclick="toggleLock()">ล็อก</button>
+  <button class="btn btn-ghost" onclick="openUsers()">ผู้ใช้งาน</button>
+  <button class="btn btn-ghost" onclick="openSetup()">ตั้งค่า</button>
+</header>
+
+<main>
+  <div class="toolbar">
+    <button class="btn btn-red" onclick="openAdd()">+ เพิ่มรุ่นอบรม</button>
+    <div class="cofil" id="cofil">
+      <button data-c="ALL" class="on">ทั้งหมด</button>
+      <button data-c="TH">TH</button>
+      <button data-c="HRST">HRS-T</button>
+      <button data-c="EGAS">EGAS</button>
+    </div>
+    <input class="search" id="q" placeholder="ค้นหาหลักสูตร / ID" oninput="render()">
+    <button class="btn btn-ghost" onclick="loadData(true)">รีเฟรช</button>
+    <button class="btn btn-ghost" onclick="backupJSON()">สำรองข้อมูล</button>
+    <button class="btn btn-ghost" onclick="importJSON()">นำเข้าข้อมูล</button>
+    <button class="btn btn-ghost" onclick="exportCSV()">Excel</button>
+    <span id="syncState"></span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>บริษัท</th><th>หลักสูตร</th><th>วันอบรม</th><th>คน</th>
+      <th>ID อนุมัติ</th><th>ขั้นตอน</th><th>สถานะล่าสุด</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</main>
+
+<div id="ov" onclick="closeDrawer()"></div>
+<aside id="drawer"></aside>
+
+<!-- add run -->
+<div class="modal" id="mAdd"><div class="mcard">
+  <h2><span>เพิ่ม</span>รุ่นอบรม</h2>
+  <div class="frow"><label>บริษัท (Genpo)</label>
+    <select id="aCo"><option value="TH">TH</option><option value="HRST">HRS-T</option><option value="EGAS">EGAS</option></select></div>
+  <div class="frow"><label>ชื่อหลักสูตร</label><input id="aName"></div>
+  <div class="grid2">
+    <div class="frow"><label>วันที่อบรม (ค.ศ.)</label><input id="aDate" type="date"></div>
+    <div class="frow"><label>จำนวนคน</label><input id="aPpl" type="number" min="0"></div>
+  </div>
+  <div class="frow"><label>ID อนุมัติยื่นก่อนอบรม (ถ้ามีแล้ว)</label><input id="aId" inputmode="numeric"></div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('mAdd')">ยกเลิก</button>
+    <button class="btn btn-red" onclick="addRun()">บันทึก</button>
+  </div>
+</div></div>
+
+<!-- users -->
+<div class="modal" id="mUsers"><div class="mcard">
+  <h2><span>ผู้ใช้</span>งาน</h2>
+  <div id="uList"></div>
+  <div id="uAdd"></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeModal('mUsers')">ปิด</button></div>
+</div></div>
+
+<!-- setup -->
+<div class="modal" id="mSetup"><div class="mcard">
+  <h2><span>ตั้งค่า</span>การเชื่อมต่อ</h2>
+  <p class="note" style="margin-bottom:12px">
+    ข้อมูลเก็บใน GitHub repo <b>ส่วนตัว</b> ของทีม (ครั้งแรก: สร้าง private repo เปล่า 1 อัน
+    แล้วสร้าง Fine-grained token ที่ Settings → Developer settings → เลือกเฉพาะ repo นั้น ให้สิทธิ์ Contents: Read and write
+    จากนั้นส่งค่า 3 ช่องนี้ให้ทุกคนในทีมกรอกครั้งเดียว)
+  </p>
+  <div class="frow"><label>Owner (ชื่อบัญชี GitHub)</label><input id="sOwner"></div>
+  <div class="frow"><label>Repo (ชื่อ private repo เก็บข้อมูล)</label><input id="sRepo"></div>
+  <div class="frow"><label>Token (fine-grained, สิทธิ์ Contents RW เฉพาะ repo นี้)</label><input id="sToken" type="password"></div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('mSetup')">ยกเลิก</button>
+    <button class="btn btn-red" onclick="saveSetup()">บันทึกและเชื่อมต่อ</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= seed (จากไฟล์ Excel ทั้งสองไฟล์ · วันที่ พ.ศ. แปลงเป็น ค.ศ. แล้ว) ================= */
+const SEED = [{"co":"TH","course":"Elementary I","date":"2026-04-15","ppl":50,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r001","remark":""},{"co":"TH","course":"Elementary I","date":"2026-05-05","ppl":50,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r002","remark":""},{"co":"TH","course":"Elementary I","date":"2026-06-19","ppl":49,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r003","remark":""},{"co":"TH","course":"Elementary I","date":"2026-06-27","ppl":null,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r004","remark":""},{"co":"TH","course":"Elementary I","date":"2026-07-17","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r005","remark":""},{"co":"TH","course":"Elementary I","date":"2026-08-04","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r006","remark":""},{"co":"TH","course":"Elementary I","date":"2026-09-15","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r007","remark":""},{"co":"TH","course":"Elementary I","date":"2026-10-06","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r008","remark":""},{"co":"TH","course":"Elementary I","date":"2026-11-17","ppl":null,"id":"1300843","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r009","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-18","ppl":null,"id":"1287900","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r010","remark":""},{"co":"TH","course":"Elementary I","date":"2026-08-18","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r011","remark":""},{"co":"TH","course":"Elementary I","date":"2026-09-01","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r012","remark":""},{"co":"TH","course":"Elementary I","date":"2026-10-16","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r013","remark":""},{"co":"TH","course":"Elementary I","date":"2026-11-03","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r014","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-01","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r015","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-22","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r016","remark":""},{"co":"TH","course":"QCC","date":"2026-05-28","ppl":45,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r017","remark":""},{"co":"TH","course":"QCC","date":"2026-05-29","ppl":46,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r018","remark":""},{"co":"TH","course":"QCC","date":"2026-06-11","ppl":40,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r019","remark":""},{"co":"TH","course":"QCC","date":"2026-06-12","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r020","remark":""},{"co":"TH","course":"QCC","date":"2026-06-13","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r021","remark":""},{"co":"TH","course":"QCC","date":"2026-06-04","ppl":41,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r022","remark":""},{"co":"TH","course":"QCC","date":"2026-06-05","ppl":30,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r023","remark":""},{"co":"TH","course":"QCC","date":"2026-06-08","ppl":42,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r024","remark":""},{"co":"TH","course":"QCC","date":"2026-06-09","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r025","remark":""},{"co":"TH","course":"QCC","date":"2026-06-10","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r026","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"26-27/5/2026","ppl":30,"id":"1236870","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r027","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"25-26/6/2026","ppl":50,"id":"1236870","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r028","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"23-24/7/2026","ppl":30,"id":"1236870","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r029","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"5-6/8/2026","ppl":30,"id":"1236870","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r030","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"9-10/9/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r031","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"7-8/10/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r032","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"11-12/11/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r033","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"9-10/12/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r034","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-05-19","ppl":22,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r035","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-06-10","ppl":50,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r036","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-07-08","ppl":49,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r037","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-08-10","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r038","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-09-17","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r039","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-10-15","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r040","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-11-19","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r041","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-12-14","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r042","remark":""},{"co":"TH","course":"Genba Training","date":"9-12/11/2026","ppl":30,"id":"1262933","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r043","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-05-11","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r044","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-06-11","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r045","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-07-09","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r046","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-08-03","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r047","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-09-07","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r048","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-10-05","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r049","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-11-09","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r050","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-12-07","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r051","remark":""},{"co":"TH","course":"AO Competency Sup","date":"20-22/5/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r052","remark":""},{"co":"TH","course":"AO Competency Sup","date":"17-19/6/2026","ppl":30,"id":"1262922","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r053","remark":""},{"co":"TH","course":"AO Competency Sup","date":"15-17/7/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r054","remark":""},{"co":"TH","course":"AO Competency Sup","date":"19-21/8/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r055","remark":""},{"co":"TH","course":"AO Competency Sup","date":"28-30/9/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r056","remark":""},{"co":"TH","course":"AO Competency Sup","date":"26-28/10/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r057","remark":""},{"co":"TH","course":"AO Competency Sup","date":"25-27/11/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r058","remark":""},{"co":"TH","course":"AO Competency Sup","date":"16-18/12/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r059","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-06-09","ppl":49,"id":"1236884","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r060","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-07-03","ppl":50,"id":"1236884","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r061","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-08-14","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r062","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-09-18","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r063","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-10-16","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r064","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-11-20","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r065","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-12-11","ppl":null,"id":"1276472","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r066","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-06-12","ppl":30,"id":"1236891","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r067","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-06-24","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r068","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-07-10","ppl":30,"id":"1276461","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r069","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-08-07","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r070","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-09-11","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r071","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-10-09","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r072","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-11-13","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r073","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-12-04","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r074","remark":""},{"co":"TH","course":"New R&R For new Foreman","date":"2026-06-25","ppl":30,"id":"1262953","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r075","remark":""},{"co":"TH","course":"AO Competency Sup Level (SMG)","date":"24,25,26/6/2026","ppl":30,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r076","remark":""},{"co":"TH","course":"PSDM","date":"16-17/7/2026","ppl":16,"id":"1262971","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r077","remark":""},{"co":"TH","course":"English Workshop for Beginner","date":"2026-03-06","ppl":38,"id":"1213281","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r078","remark":""},{"co":"TH","course":"QC-J","date":"2026-07-23","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r079","remark":""},{"co":"TH","course":"QC-J","date":"2026-08-18","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r080","remark":""},{"co":"TH","course":"QC-J","date":"2026-09-23","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r081","remark":""},{"co":"TH","course":"QC-J","date":"2026-10-21","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r082","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-06-08","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r083","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-06-10","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r084","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-07-07","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r085","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-07-16","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r086","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-08-10","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r087","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-08-27","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r088","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-09-10","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r089","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-09-23","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r090","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-10-08","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r091","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-10-27","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r092","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-11-10","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r093","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-11-19","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r094","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-12-10","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r095","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-12-21","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r096","remark":""},{"co":"TH","course":"Root Cause Analysis (RCA)","date":"2026-08-03","ppl":30,"id":"1294272","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r097","remark":""},{"co":"TH","course":"Elementary II","date":"2026-04-24","ppl":50,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r098","remark":""},{"co":"TH","course":"Elementary II","date":"2026-05-12","ppl":50,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r099","remark":""},{"co":"TH","course":"Elementary II","date":"2026-06-23","ppl":38,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r100","remark":""},{"co":"TH","course":"Elementary II","date":"2026-07-21","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r101","remark":""},{"co":"TH","course":"Elementary II","date":"2026-08-25","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r102","remark":""},{"co":"TH","course":"Elementary II","date":"2026-09-29","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r103","remark":""},{"co":"TH","course":"Elementary II","date":"2026-10-27","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r104","remark":""},{"co":"TH","course":"Elementary II","date":"2026-11-24","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r105","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-22","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r106","remark":""},{"co":"TH","course":"Elementary II","date":"2026-08-11","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r107","remark":""},{"co":"TH","course":"Elementary II","date":"2026-09-08","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r108","remark":""},{"co":"TH","course":"Elementary II","date":"2026-10-09","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r109","remark":""},{"co":"TH","course":"Elementary II","date":"2026-11-13","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r110","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-18","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r111","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-25","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r112","remark":""},{"co":"HRST","course":"PDCA Approach and Implementation","date":"2026-03-12","ppl":30,"id":"1222002","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r113","remark":""},{"co":"HRST","course":"Predict Product Lifecycle with Machine Learning","date":"2026-03-20","ppl":30,"id":"1225976","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r114","remark":""},{"co":"HRST","course":"Business Disruption and Resilience","date":"2026-03-23","ppl":10,"id":"1225989","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r115","remark":""},{"co":"HRST","course":"ระเบียบวิธีวิจัย","date":"2026-03-30","ppl":10,"id":"1226156","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r116","remark":""},{"co":"HRST","course":"การประยุกต์ใช้ การวิเคราะห์แนวโน้มลักษณะความล้มเหลวและผลกระทบ (Application of FMEA ๔th Edition)","date":"2026-04-20","ppl":30,"id":"1235672","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r117","remark":""},{"co":"EGAS","course":"CATIA V5 Fundamentals Course (ความรู้พื้นฐานโปรแกรม CATIA V5)","date":"12-16-Jan-26","ppl":1,"id":"474879","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r118","remark":""},{"co":"EGAS","course":"Catia V.6 Course (ความรู้เกี่ยวกับโปรแกรม Catia V.6)","date":"12-16-Jan-26","ppl":1,"id":"474880","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r119","remark":""},{"co":"EGAS","course":"เทคนิคและเครื่องมือในการสำรวจและวิเคราะห์ความต้องการของพนักงาน (Employee Needs Assessment Tools)","date":"2026-02-28","ppl":8,"id":"1198714","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r120","remark":""},{"co":"EGAS","course":"หลักสูตร AO Competency Training (SUP Level) (การสร้างสมรรถนะในการทำงาน สำหรับพนักงานระดับหัวหน้างาน)","date":"2026-02-19","ppl":13,"id":"1205295","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r121","remark":""},{"co":"EGAS","course":"๔W Genba Training (เรียนรู้กระบวนการผลิตรถยนต์) Batch ๑","date":"17-20-Aug-26","ppl":4,"id":"1205581","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r122","remark":""},{"co":"EGAS","course":"๔W Genba Training (ฺเรียนรู้กระบวนการผลิตรถยนต์) Batch ๒","date":"25-28-Jan-27","ppl":4,"id":"1205651","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r123","remark":""},{"co":"EGAS","course":"๒W Genba Training (ฺเรียนรู้กระบวนการผลิตรถจักรยานยนต์) Batch ๑","date":"9-12-Nov-26","ppl":2,"id":"1205665","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r124","remark":""},{"co":"EGAS","course":"๒W Genba Training (ฺเรียนรู้กระบวนการผลิตรถจักรยานยนต์) Batch ๒","date":"8-11-Feb-27","ppl":2,"id":"1205672","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r125","remark":""},{"co":"EGAS","course":"Catia V.๖ Course (ความรู้เกี่ยวกับโปรแกรม Catia V.๖)","date":"23-27-Mar-26","ppl":1,"id":"482066","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r126","remark":""},{"co":"EGAS","course":"Catia V.6 Course (ความรู้เกี่ยวกับโปรแกรม Catia V.6)","date":"23-27-Mar-26","ppl":1,"id":"484276","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r127","remark":""},{"co":"EGAS","course":"การเจรจาต่อรอง สำหรับงานจัดซื้อจัดจ้างสมัยใหม","date":"2026-03-23","ppl":1,"id":"485929","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r128","remark":""},{"co":"EGAS","course":"การพัฒนาผู้บริหารยุคใหม่ (Executive Mini MBA)","date":"6-June-26 \nto \n26-Sep-26","ppl":2,"id":"495377","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r129","remark":""},{"co":"EGAS","course":"Effectiveness QCC activity (การควบคุมคุณภาพด้วยกิจกรรม QCC)","date":"2026-08-06","ppl":24,"id":"1252478","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r130","remark":""},{"co":"EGAS","course":"การสื่อสาร และการนำเสนออย่างมืออาชีพ (Professional Communication & Presentation Skills)","date":"2026-07-07","ppl":1,"id":"501736","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r131","remark":""}];
+
+/* ================= config & github io ================= */
+const CFG_KEY='dsd_cfg';
+let cfg=JSON.parse(localStorage.getItem(CFG_KEY)||'null');
+let data={users:{main:null,supports:[]},runs:[]}, dataSha=null, currentId=null;
+
+const api=p=>`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${p}`;
+const H=()=>({'Authorization':'Bearer '+cfg.token,'Accept':'application/vnd.github+json'});
+async function ghGet(p){
+  const r=await fetch(api(p),{headers:H(),cache:'no-store'});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error('GitHub '+r.status);
+  return r.json();
+}
+async function ghPut(p,base64,sha,msg){
+  const body={message:msg,content:base64};
+  if(sha)body.sha=sha;
+  const r=await fetch(api(p),{method:'PUT',headers:H(),body:JSON.stringify(body)});
+  if(r.status===409||r.status===422)throw new Error('conflict');
+  if(!r.ok)throw new Error('GitHub '+r.status);
+  return r.json();
+}
+const b64=s=>btoa(unescape(encodeURIComponent(s)));
+
+async function loadData(showToast){
+  if(!cfg){openSetup();return}
+  sync('กำลังโหลด…');
+  try{
+    const f=await ghGet('data.json');
+    if(f){data=JSON.parse(decodeURIComponent(escape(atob(f.content))));dataSha=f.sha}
+    else{
+      data={users:{main:null,supports:[]},runs:SEED};dataSha=null;
+      await saveData('init from Excel seed');
+      toast('สร้างข้อมูลเริ่มต้นจากไฟล์ Excel — '+SEED.length+' รุ่น');
+    }
+    renderUserSel();render();
+    sync('ซิงค์ล่าสุด '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}));
+    if(showToast)toast('อัปเดตข้อมูลแล้ว');
+    if(!data.users.main)openUsers();   // ยังไม่ตั้ง Main User
+  }catch(e){sync('เชื่อมต่อไม่ได้ — ตรวจการตั้งค่า');console.error(e)}
+}
+async function saveData(msg){
+  try{
+    const res=await ghPut('data.json',b64(JSON.stringify(data,null,1)),dataSha,msg);
+    dataSha=res.content.sha;
+    sync('บันทึกแล้ว '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){
+    if(e.message==='conflict'){toast('มีคนอื่นบันทึกก่อนหน้า — กำลังโหลดใหม่ กรุณาทำซ้ำ');await loadData();}
+    else{toast('บันทึกไม่สำเร็จ');console.error(e)}
+    throw e;
+  }
+}
+const sync=t=>document.getElementById('syncState').textContent=t;
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',2600)}
+const esc=s=>String(s??'').replace(/[<>&"]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
+
+/* ================= model ================= */
+const CO={TH:'TH',HRST:'HRS-T',EGAS:'EGAS'};
+/* ขั้นตอน DSD: id (ได้ ID อนุมัติก่อนอบรม) → report (ยื่นรายงาน) → dept (กรมพัฒฯ อนุมัติ) → receipt → cert */
+const STEPS=[
+  {k:'report',nm:'ยื่นรายงานการฝึก'},
+  {k:'dept',nm:'กรมพัฒฯ อนุมัติรายงาน'},
+  {k:'receipt',nm:'ใบเสร็จ'},
+  {k:'cert',nm:'หนังสือรับรอง'},
+];
+const today=()=>new Date().toISOString().slice(0,10);
+const isPast=r=>r.date&&r.date<today();
+const overdue=r=>isPast(r)&&!r.report;                    // อบรมแล้ว ยังไม่ยื่นรายงาน
+const soonNoId=r=>!r.id&&r.date&&!isPast(r)&&daysTo(r.date)<=30;  // ใกล้อบรมแต่ยังไม่มี ID
+const daysTo=s=>Math.round((new Date(s)-new Date(today()))/864e5);
+function fD(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`}
+function lastStatus(r){
+  if(!r.id)return{t:'รอ ID อนุมัติ',cl:isPast(r)||soonNoId(r)?'alert':'wait'};
+  for(const s of STEPS)if(!r[s.k])return{t:'รอ'+s.nm,cl:s.k==='report'&&overdue(r)?'alert':'wait'};
+  return{t:'เสร็จสิ้น',cl:'ok'};
+}
+
+/* ================= users (Main 1 คน / Support หลายคน · ตั้งชื่อเอง · ล็อกถาวร) ================= */
+const userList=()=>[data.users.main,...data.users.supports].filter(Boolean);
+const isMain=()=>me()===data.users.main;
+const me=()=>document.getElementById('whoami').value;
+function renderUserSel(){
+  const sel=document.getElementById('whoami'),v=localStorage.getItem('dsd_me')||'';
+  sel.innerHTML='<option value="">— เลือก User —</option>'+
+    userList().map(u=>`<option ${u===v?'selected':''}>${esc(u)}</option>`).join('');
+  applyLock();
+}
+function openUsers(){
+  const u=data.users;
+  document.getElementById('uList').innerHTML=
+    (u.main?`<div class="urow"><span class="tag">Main</span><b>${esc(u.main)}</b><span class="lk">🔒 ล็อกถาวร</span></div>`
+           :`<div class="note" style="margin-bottom:8px">ยังไม่ได้ตั้ง Main User — ตั้งได้ครั้งเดียว แก้ไขไม่ได้</div>`)+
+    u.supports.map(s=>`<div class="urow"><span class="tag sup">Support</span>${esc(s)}<span class="lk">🔒 ล็อกถาวร</span></div>`).join('');
+  const canAdd=!u.main||me()===u.main;
+  document.getElementById('uAdd').innerHTML=canAdd?`
+    <div class="frow" style="margin-top:12px"><label>${u.main?'เพิ่ม Support User':'ตั้งชื่อ Main User'} (บันทึกแล้วล็อก แก้ไข/ลบไม่ได้)</label>
+    <div style="display:flex;gap:8px"><input id="uName" maxlength="30">
+    <button class="btn btn-red" style="white-space:nowrap" onclick="addUser()">บันทึกและล็อก</button></div></div>`
+    :`<p class="note" style="margin-top:10px">เฉพาะ Main User (${esc(u.main)}) เท่านั้นที่เพิ่มผู้ใช้ได้ — เลือก user แล้วกดล็อกก่อน</p>`;
+  document.getElementById('mUsers').classList.add('open');
+}
+async function addUser(){
+  const n=document.getElementById('uName').value.trim();
+  if(!n)return;
+  if(userList().includes(n)){toast('มีชื่อนี้แล้ว');return}
+  const asMain=!data.users.main;
+  if(!confirm(`${asMain?'ตั้ง':'เพิ่ม'} "${n}" เป็น ${asMain?'Main User':'Support User'}?\nบันทึกแล้วจะล็อกถาวร แก้ไขหรือลบไม่ได้`))return;
+  if(asMain){data.users.main=n}else{data.users.supports.push(n)}
+  await saveData((asMain?'set main user: ':'add support user: ')+n);
+  if(asMain){  // ล็อกเครื่องนี้เป็น Main ทันที
+    localStorage.setItem('dsd_me',n);
+    document.getElementById('whoami').value=n;
+    locked=true;localStorage.setItem('dsd_locked','1');
+  }
+  renderUserSel();openUsers();
+}
+
+/* lock การเลือก user บนเครื่องนี้ */
+const roleSel=document.getElementById('whoami'),lockBtn=document.getElementById('lockBtn');
+let locked=localStorage.getItem('dsd_locked')==='1';
+function applyLock(){
+  roleSel.disabled=locked;
+  lockBtn.textContent=locked?'เปลี่ยน user':'ล็อก';
+  lockBtn.className=locked?'btn btn-ghost':'btn btn-red';
+}
+function toggleLock(){
+  if(locked){
+    if(!confirm('ปลดล็อกเพื่อเปลี่ยน user? การอัปเดตหลังจากนี้จะบันทึกในชื่อ user ใหม่'))return;
+    locked=false;localStorage.setItem('dsd_locked','0');
+  }else{
+    if(!roleSel.value){toast('เลือก user ก่อนกดล็อก');return}
+    if(!confirm(`ยืนยันใช้งานในชื่อ "${roleSel.value}" ?`))return;
+    locked=true;localStorage.setItem('dsd_locked','1');
+    localStorage.setItem('dsd_me',roleSel.value);
+    toast('ล็อก user เป็น '+roleSel.value);
+  }
+  applyLock();
+}
+roleSel.onchange=e=>localStorage.setItem('dsd_me',e.target.value);
+function requireUser(){
+  if(locked&&me())return true;
+  toast('เลือก user มุมขวาบนแล้วกด "ล็อก" ก่อนอัปเดตข้อมูล');
+  return false;
+}
+
+/* ================= notifications ================= */
+function notifItems(){
+  const out=[];
+  for(const r of data.runs){
+    if(overdue(r))out.push({r,hot:daysTo(r.date)<-14,kind:'report',
+      t1:`${CO[r.co]} · ${r.course}`,t2:`อบรม ${fD(r.date)} แล้ว ยังไม่ยื่นรายงาน`,when:`${-daysTo(r.date)} วัน`,order:daysTo(r.date)});
+    if(soonNoId(r))out.push({r,hot:daysTo(r.date)<=7,kind:'id',
+      t1:`${CO[r.co]} · ${r.course}`,t2:`อบรม ${fD(r.date)} — ยังไม่มี ID อนุมัติ (ต้องยื่นก่อนอบรม)`,when:`อีก ${daysTo(r.date)} วัน`,order:daysTo(r.date)});
+  }
+  return out.sort((a,b)=>a.order-b.order);
+}
+function renderNotif(){
+  const items=notifItems(),badge=document.getElementById('bellBadge'),p=document.getElementById('notifPanel');
+  badge.style.display=items.length?'flex':'none';badge.textContent=items.length;
+  if(!items.length){p.innerHTML='<div class="np-head">การแจ้งเตือน</div><div class="np-empty">ไม่มีรายการต้องเร่ง</div>';return}
+  const rep=items.filter(x=>x.kind==='report'),nid=items.filter(x=>x.kind==='id');
+  const row=x=>`<div class="np-item" onclick="closeNotif();openDrawer('${x.r.id_}')">
+    <span class="np-ico ${x.hot?'hot':'warn'}"></span>
+    <span class="np-txt"><span class="np-t1">${esc(x.t1)}</span><span class="np-t2">${esc(x.t2)}</span></span>
+    <span class="np-when">${x.when}</span></div>`;
+  p.innerHTML='<div class="np-head">การแจ้งเตือน</div>'
+    +(rep.length?'<div class="np-sect">ค้างยื่นรายงาน — ยิ่งช้ายิ่งเสี่ยงไม่ได้รับรอง</div>'+rep.map(row).join(''):'')
+    +(nid.length?'<div class="np-sect">รอ ID อนุมัติ — ต้องยื่นก่อนวันอบรม</div>'+nid.map(row).join(''):'');
+}
+function toggleNotif(e){e.stopPropagation();document.getElementById('notifPanel').classList.toggle('open')}
+function closeNotif(){document.getElementById('notifPanel').classList.remove('open')}
+document.addEventListener('click',e=>{if(!e.target.closest('#bellWrap'))closeNotif()});
+
+/* ================= render ================= */
+let cofil='ALL';
+document.querySelectorAll('#cofil button').forEach(b=>b.onclick=()=>{
+  cofil=b.dataset.c;
+  document.querySelectorAll('#cofil button').forEach(x=>x.classList.toggle('on',x===b));
+  render();
+});
+const MTH=['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function render(){
+  renderNotif();
+  const tb=document.getElementById('rows');
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  let rs=data.runs.filter(r=>cofil==='ALL'||r.co===cofil);
+  if(q)rs=rs.filter(r=>(r.course+' '+(r.id||'')).toLowerCase().includes(q));
+  rs.sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
+  if(!rs.length){tb.innerHTML='<tr><td colspan="7" style="color:var(--sub);text-align:center;padding:30px">ไม่พบรายการ</td></tr>';return}
+  let html='',lastM='';
+  for(const r of rs){
+    const mk=r.date?r.date.slice(0,7):'no';
+    if(mk!==lastM){
+      lastM=mk;
+      const lbl=mk==='no'?'ไม่ระบุวันที่':MTH[+mk.slice(5)]+' '+(+mk.slice(0,4)+543);
+      html+=`<tr class="mrow"><td colspan="7">${lbl}</td></tr>`;
+    }
+    const st=lastStatus(r);
+    const dots=STEPS.map(s=>`<span class="dot ${r[s.k]?'ok':(s.k==='report'&&overdue(r)?'hot':'wait')}" title="${s.nm}"></span>`).join('');
+    html+=`<tr class="${overdue(r)?'late':''}" onclick="openDrawer('${r.id_}')">
+      <td><span class="co ${r.co}">${CO[r.co]}</span></td>
+      <td class="cname">${esc(r.course)}</td>
+      <td class="cdate">${fD(r.date)}</td>
+      <td>${r.ppl??''}</td>
+      <td style="font-size:12.5px">${esc(r.id)||'<span style="color:var(--none)">—</span>'}</td>
+      <td><div class="dots">${dots}</div></td>
+      <td><span class="chip ${st.cl}">${st.t}</span></td>`;
+  }
+  tb.innerHTML=html;
+}
+
+/* ================= drawer ================= */
+const cur=()=>data.runs.find(x=>x.id_===currentId);
+function openDrawer(id){
+  currentId=id;
+  const r=cur();if(!r)return;
+  const stepRows=STEPS.map(s=>{
+    const by=(r.by||{})[s.k];
+    const ts=r[s.k]&&by?`<span class="ts">${esc(by)}</span>`:'';
+    return`<div class="step"><span class="nm">${s.nm}</span>${ts}
+      <input type="checkbox" ${r[s.k]?'checked':''} onchange="setStep('${s.k}',this.checked)"></div>`;
+  }).join('');
+  document.getElementById('drawer').innerHTML=`
+    <div class="dhead"><h2><span class="co ${r.co}">${CO[r.co]}</span> &nbsp;${esc(r.course)}</h2>
+      <button class="btn btn-ghost" onclick="closeDrawer()">✕</button></div>
+    <div class="dbody">
+      <div class="sect"><h3>ข้อมูลรุ่นอบรม</h3>
+        <div class="frow"><label>ชื่อหลักสูตร</label><input value="${esc(r.course)}" onchange="editField('course',this.value)"></div>
+        <div class="grid2">
+          <div class="frow"><label>บริษัท</label>
+            <select onchange="editField('co',this.value)">${Object.entries(CO).map(([k,v])=>`<option value="${k}" ${r.co===k?'selected':''}>${v}</option>`).join('')}</select></div>
+          <div class="frow"><label>วันที่อบรม (ค.ศ.)</label><input type="date" value="${r.date||''}" onchange="editField('date',this.value)"></div>
+          <div class="frow"><label>จำนวนคน</label><input type="number" min="0" value="${r.ppl??''}" onchange="editField('ppl',this.value?+this.value:null)"></div>
+          <div class="frow"><label>ID อนุมัติยื่นก่อนอบรม</label><input inputmode="numeric" value="${esc(r.id)}" onchange="editField('id',this.value.trim())"></div>
+        </div>
+      </div>
+      <div class="sect"><h3>ขั้นตอนหลังอบรม</h3>${stepRows}</div>
+      <div class="sect"><h3>Remark</h3>
+        <textarea rows="3" onchange="editField('remark',this.value)">${esc(r.remark||'')}</textarea></div>
+      <div class="sect"><button class="btn btn-ghost" style="color:var(--alert);border-color:var(--alert)" onclick="delRun()">ลบรุ่นนี้</button></div>
+    </div>`;
+  document.getElementById('ov').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer(){document.getElementById('ov').classList.remove('open');document.getElementById('drawer').classList.remove('open');currentId=null}
+async function setStep(k,v){
+  if(!requireUser()){openDrawer(currentId);return}
+  const r=cur();r[k]=v;
+  r.by=r.by||{};r.by[k]=v?me()+' '+new Date().toLocaleDateString('en-GB'):null;
+  await saveData(`${k}=${v} by ${me()} : ${r.course}`);render();openDrawer(r.id_);
+}
+async function editField(f,v){
+  if(!requireUser()){openDrawer(currentId);return}
+  const r=cur();r[f]=v;
+  await saveData(`edit ${f} by ${me()} : ${r.course}`);render();
+}
+async function delRun(){
+  if(!requireUser())return;
+  const r=cur();
+  if(!confirm(`ลบ "${r.course}" ?`))return;
+  data.runs=data.runs.filter(x=>x!==r);
+  await saveData('delete run by '+me());closeDrawer();render();
+}
+
+/* ================= add ================= */
+function openAdd(){document.getElementById('mAdd').classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+async function addRun(){
+  if(!requireUser())return;
+  const name=document.getElementById('aName').value.trim();
+  if(!name){toast('กรอกชื่อหลักสูตร');return}
+  data.runs.push({
+    id_:Date.now().toString(36),
+    co:document.getElementById('aCo').value,
+    course:name,
+    date:document.getElementById('aDate').value,
+    ppl:document.getElementById('aPpl').value?+document.getElementById('aPpl').value:null,
+    id:document.getElementById('aId').value.trim(),
+    report:false,dept:false,receipt:false,cert:false
+  });
+  await saveData('add run by '+me()+': '+name);
+  closeModal('mAdd');
+  ['aName','aDate','aPpl','aId'].forEach(i=>document.getElementById(i).value='');
+  render();
+}
+
+/* ================= backup / restore / excel ================= */
+function dlBlob(blob,fn){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fn;a.click();URL.revokeObjectURL(url)}
+const stamp=()=>new Date().toISOString().slice(0,10);
+function backupJSON(){
+  dlBlob(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}),`dsd-backup_${stamp()}.json`);
+  toast('ดาวน์โหลดไฟล์สำรองแล้ว');
+}
+function importJSON(){
+  if(!requireUser())return;
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=async()=>{
+    const f=inp.files[0];if(!f)return;
+    try{
+      const d=JSON.parse(await f.text());
+      if(!Array.isArray(d.runs))throw 0;
+      if(!confirm(`นำเข้า ${d.runs.length} รุ่น แทนที่ข้อมูลปัจจุบันทั้งหมด?`))return;
+      data=d;
+      await saveData('restore from backup by '+me());
+      renderUserSel();render();toast('นำเข้าข้อมูลสำเร็จ');
+    }catch(e){toast('ไฟล์ไม่ถูกต้อง — ต้องเป็นไฟล์จากปุ่ม "สำรองข้อมูล"')}
+  };
+  inp.click();
+}
+function exportCSV(){
+  // ponytail: CSV UTF-8 BOM เปิดใน Excel ได้ตรง ไม่ต้องพึ่งไลบรารี xlsx
+  const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
+  const head=['บริษัท','หลักสูตร','วันที่อบรม','จำนวนคน','ID อนุมัติ',
+    ...STEPS.map(s=>s.nm),'สถานะล่าสุด','Remark'];
+  const cell=(r,k)=>r[k]?((r.by||{})[k]||'✓'):'';
+  const rows=[...data.runs].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(r=>[
+    CO[r.co],r.course,r.date,r.ppl,r.id,
+    ...STEPS.map(s=>cell(r,s.k)),lastStatus(r).t,r.remark||''
+  ].map(q).join(','));
+  dlBlob(new Blob(['\uFEFF'+head.map(q).join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'}),`dsd-tracker_${stamp()}.csv`);
+  toast('ส่งออก Excel (CSV) แล้ว');
+}
+
+/* ================= setup ================= */
+function openSetup(){
+  if(cfg){document.getElementById('sOwner').value=cfg.owner;document.getElementById('sRepo').value=cfg.repo;document.getElementById('sToken').value=cfg.token}
+  document.getElementById('mSetup').classList.add('open');
+}
+async function saveSetup(){
+  cfg={owner:document.getElementById('sOwner').value.trim(),
+       repo:document.getElementById('sRepo').value.trim(),
+       token:document.getElementById('sToken').value.trim()};
+  if(!cfg.owner||!cfg.repo||!cfg.token){toast('กรอกให้ครบทั้ง 3 ช่อง');return}
+  localStorage.setItem(CFG_KEY,JSON.stringify(cfg));
+  closeModal('mSetup');
+  await loadData(true);
+}
+
+applyLock();
+loadData();
+</script>
+</body>
+</html>
