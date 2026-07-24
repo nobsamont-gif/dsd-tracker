@@ -86,6 +86,28 @@ tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
 .chip.wait{background:#FFF3E0;color:var(--wait)}
 .chip.alert{background:#FDE7E7;color:var(--alert);font-weight:400}
 
+/* triage tiles */
+#tiles{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:9px 14px;text-align:left;min-width:104px;line-height:1.35}
+.tile b{display:block;font-size:19px;font-weight:500}
+.tile span{display:block;font-size:11px;color:var(--sub)}
+.tile:hover{border-color:var(--sub)}
+.tile.on{border-color:var(--red);box-shadow:inset 0 -2px 0 var(--red)}
+.tile.alert b{color:var(--alert)}
+.tile.wait b{color:var(--wait)}
+.tile.ok b{color:var(--ok)}
+
+/* req status box in drawer */
+.reqbox{border:1px solid var(--line);border-left-width:3px;border-radius:5px;padding:10px 12px;background:#FAFAFA}
+.reqbox.none{border-left-color:var(--alert);background:#FEF6F6}
+.reqbox.sent{border-left-color:var(--wait);background:#FFFAF2}
+.reqbox.ok{border-left-color:var(--ok);background:#F4FAF5}
+.reqline{display:flex;align-items:center;gap:9px;font-size:13px}
+.reqdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.reqbox.none .reqdot{background:var(--alert)}
+.reqbox.sent .reqdot{background:var(--wait)}
+.reqbox.ok .reqdot{background:var(--ok)}
+
 /* drawer */
 #ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:20}
 #ov.open{display:block}
@@ -152,10 +174,11 @@ tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
     <button class="btn btn-ghost" onclick="exportCSV()">Excel</button>
     <span id="syncState"></span>
   </div>
+  <div id="tiles"></div>
   <table>
     <thead><tr>
       <th>บริษัท</th><th>หลักสูตร</th><th>วันอบรม</th><th>คน</th>
-      <th>ID อนุมัติ</th><th>ขั้นตอน</th><th>สถานะล่าสุด</th>
+      <th>ขอรับรองหลักสูตร</th><th>ขั้นตอน</th><th>สถานะล่าสุด</th>
     </tr></thead>
     <tbody id="rows"></tbody>
   </table>
@@ -171,10 +194,13 @@ tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
     <select id="aCo"><option value="TH">TH</option><option value="HRST">HRS-T</option><option value="EGAS">EGAS</option></select></div>
   <div class="frow"><label>ชื่อหลักสูตร</label><input id="aName"></div>
   <div class="grid2">
-    <div class="frow"><label>วันที่อบรม (ค.ศ.)</label><input id="aDate" type="date"></div>
+    <div class="frow"><label>วันที่เริ่มอบรม (ค.ศ.)</label><input id="aDate" type="date"></div>
+    <div class="frow"><label>วันสุดท้าย (ถ้าหลายวัน)</label><input id="aEnd" type="date"></div>
     <div class="frow"><label>จำนวนคน</label><input id="aPpl" type="number" min="0"></div>
   </div>
-  <div class="frow"><label>ID อนุมัติยื่นก่อนอบรม (ถ้ามีแล้ว)</label><input id="aId" inputmode="numeric"></div>
+  <div class="frow"><label>สถานะขอรับรองหลักสูตร</label>
+    <select id="aReq"><option value="none">ยังไม่ยื่นขอรับรอง</option><option value="sent">ยื่นแล้ว รอกรมรับรอง</option><option value="ok">รับรองแล้ว (มี ID)</option></select></div>
+  <div class="frow"><label>เลข ID รับรองหลักสูตร (ถ้ามีแล้ว)</label><input id="aId" inputmode="numeric"></div>
   <div class="mfoot">
     <button class="btn btn-ghost" onclick="closeModal('mAdd')">ยกเลิก</button>
     <button class="btn btn-red" onclick="addRun()">บันทึก</button>
@@ -200,6 +226,12 @@ tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
   <div class="frow"><label>Owner (ชื่อบัญชี GitHub)</label><input id="sOwner"></div>
   <div class="frow"><label>Repo (ชื่อ private repo เก็บข้อมูล)</label><input id="sRepo"></div>
   <div class="frow"><label>Token (fine-grained, สิทธิ์ Contents RW เฉพาะ repo นี้)</label><input id="sToken" type="password"></div>
+  <h2 style="margin:20px 0 8px"><span>กำหนด</span>ส่ง</h2>
+  <p class="note" style="margin-bottom:10px">ค่านี้ใช้คำนวณวันครบกำหนดและการแจ้งเตือน — บันทึกร่วมกันทั้งทีม</p>
+  <div class="grid2">
+    <div class="frow"><label>ยื่นขอรับรองหลักสูตร ล่วงหน้าก่อนอบรม (วัน)</label><input id="sLead" type="number" min="1"></div>
+    <div class="frow"><label>ยื่นรายงานผลการฝึก ภายในหลังอบรม (วัน)</label><input id="sRep" type="number" min="1"></div>
+  </div>
   <div class="mfoot">
     <button class="btn btn-ghost" onclick="closeModal('mSetup')">ยกเลิก</button>
     <button class="btn btn-red" onclick="saveSetup()">บันทึกและเชื่อมต่อ</button>
@@ -210,7 +242,7 @@ tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
 
 <script>
 /* ================= seed (จากไฟล์ Excel ทั้งสองไฟล์ · วันที่ พ.ศ. แปลงเป็น ค.ศ. แล้ว) ================= */
-const SEED = [{"co":"TH","course":"Elementary I","date":"2026-04-15","ppl":50,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r001","remark":""},{"co":"TH","course":"Elementary I","date":"2026-05-05","ppl":50,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r002","remark":""},{"co":"TH","course":"Elementary I","date":"2026-06-19","ppl":49,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r003","remark":""},{"co":"TH","course":"Elementary I","date":"2026-06-27","ppl":null,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r004","remark":""},{"co":"TH","course":"Elementary I","date":"2026-07-17","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r005","remark":""},{"co":"TH","course":"Elementary I","date":"2026-08-04","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r006","remark":""},{"co":"TH","course":"Elementary I","date":"2026-09-15","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r007","remark":""},{"co":"TH","course":"Elementary I","date":"2026-10-06","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r008","remark":""},{"co":"TH","course":"Elementary I","date":"2026-11-17","ppl":null,"id":"1300843","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r009","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-18","ppl":null,"id":"1287900","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r010","remark":""},{"co":"TH","course":"Elementary I","date":"2026-08-18","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r011","remark":""},{"co":"TH","course":"Elementary I","date":"2026-09-01","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r012","remark":""},{"co":"TH","course":"Elementary I","date":"2026-10-16","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r013","remark":""},{"co":"TH","course":"Elementary I","date":"2026-11-03","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r014","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-01","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r015","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-22","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r016","remark":""},{"co":"TH","course":"QCC","date":"2026-05-28","ppl":45,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r017","remark":""},{"co":"TH","course":"QCC","date":"2026-05-29","ppl":46,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r018","remark":""},{"co":"TH","course":"QCC","date":"2026-06-11","ppl":40,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r019","remark":""},{"co":"TH","course":"QCC","date":"2026-06-12","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r020","remark":""},{"co":"TH","course":"QCC","date":"2026-06-13","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r021","remark":""},{"co":"TH","course":"QCC","date":"2026-06-04","ppl":41,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r022","remark":""},{"co":"TH","course":"QCC","date":"2026-06-05","ppl":30,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r023","remark":""},{"co":"TH","course":"QCC","date":"2026-06-08","ppl":42,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r024","remark":""},{"co":"TH","course":"QCC","date":"2026-06-09","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r025","remark":""},{"co":"TH","course":"QCC","date":"2026-06-10","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r026","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"26-27/5/2026","ppl":30,"id":"1236870","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r027","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"25-26/6/2026","ppl":50,"id":"1236870","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r028","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"23-24/7/2026","ppl":30,"id":"1236870","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r029","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"5-6/8/2026","ppl":30,"id":"1236870","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r030","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"9-10/9/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r031","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"7-8/10/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r032","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"11-12/11/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r033","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"9-10/12/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r034","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-05-19","ppl":22,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r035","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-06-10","ppl":50,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r036","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-07-08","ppl":49,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r037","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-08-10","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r038","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-09-17","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r039","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-10-15","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r040","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-11-19","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r041","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-12-14","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r042","remark":""},{"co":"TH","course":"Genba Training","date":"9-12/11/2026","ppl":30,"id":"1262933","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r043","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-05-11","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r044","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-06-11","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r045","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-07-09","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r046","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-08-03","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r047","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-09-07","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r048","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-10-05","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r049","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-11-09","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r050","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-12-07","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r051","remark":""},{"co":"TH","course":"AO Competency Sup","date":"20-22/5/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r052","remark":""},{"co":"TH","course":"AO Competency Sup","date":"17-19/6/2026","ppl":30,"id":"1262922","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r053","remark":""},{"co":"TH","course":"AO Competency Sup","date":"15-17/7/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r054","remark":""},{"co":"TH","course":"AO Competency Sup","date":"19-21/8/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r055","remark":""},{"co":"TH","course":"AO Competency Sup","date":"28-30/9/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r056","remark":""},{"co":"TH","course":"AO Competency Sup","date":"26-28/10/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r057","remark":""},{"co":"TH","course":"AO Competency Sup","date":"25-27/11/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r058","remark":""},{"co":"TH","course":"AO Competency Sup","date":"16-18/12/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r059","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-06-09","ppl":49,"id":"1236884","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r060","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-07-03","ppl":50,"id":"1236884","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r061","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-08-14","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r062","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-09-18","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r063","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-10-16","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r064","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-11-20","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r065","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-12-11","ppl":null,"id":"1276472","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r066","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-06-12","ppl":30,"id":"1236891","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r067","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-06-24","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r068","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-07-10","ppl":30,"id":"1276461","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r069","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-08-07","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r070","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-09-11","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r071","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-10-09","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r072","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-11-13","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r073","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-12-04","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r074","remark":""},{"co":"TH","course":"New R&R For new Foreman","date":"2026-06-25","ppl":30,"id":"1262953","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r075","remark":""},{"co":"TH","course":"AO Competency Sup Level (SMG)","date":"24,25,26/6/2026","ppl":30,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r076","remark":""},{"co":"TH","course":"PSDM","date":"16-17/7/2026","ppl":16,"id":"1262971","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r077","remark":""},{"co":"TH","course":"English Workshop for Beginner","date":"2026-03-06","ppl":38,"id":"1213281","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r078","remark":""},{"co":"TH","course":"QC-J","date":"2026-07-23","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r079","remark":""},{"co":"TH","course":"QC-J","date":"2026-08-18","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r080","remark":""},{"co":"TH","course":"QC-J","date":"2026-09-23","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r081","remark":""},{"co":"TH","course":"QC-J","date":"2026-10-21","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r082","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-06-08","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r083","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-06-10","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r084","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-07-07","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r085","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-07-16","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r086","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-08-10","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r087","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-08-27","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r088","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-09-10","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r089","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-09-23","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r090","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-10-08","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r091","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-10-27","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r092","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-11-10","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r093","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-11-19","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r094","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-12-10","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r095","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-12-21","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r096","remark":""},{"co":"TH","course":"Root Cause Analysis (RCA)","date":"2026-08-03","ppl":30,"id":"1294272","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r097","remark":""},{"co":"TH","course":"Elementary II","date":"2026-04-24","ppl":50,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r098","remark":""},{"co":"TH","course":"Elementary II","date":"2026-05-12","ppl":50,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r099","remark":""},{"co":"TH","course":"Elementary II","date":"2026-06-23","ppl":38,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r100","remark":""},{"co":"TH","course":"Elementary II","date":"2026-07-21","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r101","remark":""},{"co":"TH","course":"Elementary II","date":"2026-08-25","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r102","remark":""},{"co":"TH","course":"Elementary II","date":"2026-09-29","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r103","remark":""},{"co":"TH","course":"Elementary II","date":"2026-10-27","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r104","remark":""},{"co":"TH","course":"Elementary II","date":"2026-11-24","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r105","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-22","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r106","remark":""},{"co":"TH","course":"Elementary II","date":"2026-08-11","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r107","remark":""},{"co":"TH","course":"Elementary II","date":"2026-09-08","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r108","remark":""},{"co":"TH","course":"Elementary II","date":"2026-10-09","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r109","remark":""},{"co":"TH","course":"Elementary II","date":"2026-11-13","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r110","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-18","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r111","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-25","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r112","remark":""},{"co":"HRST","course":"PDCA Approach and Implementation","date":"2026-03-12","ppl":30,"id":"1222002","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r113","remark":""},{"co":"HRST","course":"Predict Product Lifecycle with Machine Learning","date":"2026-03-20","ppl":30,"id":"1225976","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r114","remark":""},{"co":"HRST","course":"Business Disruption and Resilience","date":"2026-03-23","ppl":10,"id":"1225989","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r115","remark":""},{"co":"HRST","course":"ระเบียบวิธีวิจัย","date":"2026-03-30","ppl":10,"id":"1226156","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r116","remark":""},{"co":"HRST","course":"การประยุกต์ใช้ การวิเคราะห์แนวโน้มลักษณะความล้มเหลวและผลกระทบ (Application of FMEA ๔th Edition)","date":"2026-04-20","ppl":30,"id":"1235672","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r117","remark":""},{"co":"EGAS","course":"CATIA V5 Fundamentals Course (ความรู้พื้นฐานโปรแกรม CATIA V5)","date":"12-16-Jan-26","ppl":1,"id":"474879","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r118","remark":""},{"co":"EGAS","course":"Catia V.6 Course (ความรู้เกี่ยวกับโปรแกรม Catia V.6)","date":"12-16-Jan-26","ppl":1,"id":"474880","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r119","remark":""},{"co":"EGAS","course":"เทคนิคและเครื่องมือในการสำรวจและวิเคราะห์ความต้องการของพนักงาน (Employee Needs Assessment Tools)","date":"2026-02-28","ppl":8,"id":"1198714","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r120","remark":""},{"co":"EGAS","course":"หลักสูตร AO Competency Training (SUP Level) (การสร้างสมรรถนะในการทำงาน สำหรับพนักงานระดับหัวหน้างาน)","date":"2026-02-19","ppl":13,"id":"1205295","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r121","remark":""},{"co":"EGAS","course":"๔W Genba Training (เรียนรู้กระบวนการผลิตรถยนต์) Batch ๑","date":"17-20-Aug-26","ppl":4,"id":"1205581","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r122","remark":""},{"co":"EGAS","course":"๔W Genba Training (ฺเรียนรู้กระบวนการผลิตรถยนต์) Batch ๒","date":"25-28-Jan-27","ppl":4,"id":"1205651","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r123","remark":""},{"co":"EGAS","course":"๒W Genba Training (ฺเรียนรู้กระบวนการผลิตรถจักรยานยนต์) Batch ๑","date":"9-12-Nov-26","ppl":2,"id":"1205665","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r124","remark":""},{"co":"EGAS","course":"๒W Genba Training (ฺเรียนรู้กระบวนการผลิตรถจักรยานยนต์) Batch ๒","date":"8-11-Feb-27","ppl":2,"id":"1205672","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r125","remark":""},{"co":"EGAS","course":"Catia V.๖ Course (ความรู้เกี่ยวกับโปรแกรม Catia V.๖)","date":"23-27-Mar-26","ppl":1,"id":"482066","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r126","remark":""},{"co":"EGAS","course":"Catia V.6 Course (ความรู้เกี่ยวกับโปรแกรม Catia V.6)","date":"23-27-Mar-26","ppl":1,"id":"484276","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r127","remark":""},{"co":"EGAS","course":"การเจรจาต่อรอง สำหรับงานจัดซื้อจัดจ้างสมัยใหม","date":"2026-03-23","ppl":1,"id":"485929","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r128","remark":""},{"co":"EGAS","course":"การพัฒนาผู้บริหารยุคใหม่ (Executive Mini MBA)","date":"6-June-26 \nto \n26-Sep-26","ppl":2,"id":"495377","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r129","remark":""},{"co":"EGAS","course":"Effectiveness QCC activity (การควบคุมคุณภาพด้วยกิจกรรม QCC)","date":"2026-08-06","ppl":24,"id":"1252478","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r130","remark":""},{"co":"EGAS","course":"การสื่อสาร และการนำเสนออย่างมืออาชีพ (Professional Communication & Presentation Skills)","date":"2026-07-07","ppl":1,"id":"501736","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r131","remark":""}];
+const SEED = [{"co":"TH","course":"Elementary I","date":"2026-04-15","dateEnd":"","dateText":"","ppl":50,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r001","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-05-05","dateEnd":"","dateText":"","ppl":50,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r002","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-06-19","dateEnd":"","dateText":"","ppl":49,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r003","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-06-27","dateEnd":"","dateText":"","ppl":null,"id":"1236770","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r004","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-07-17","dateEnd":"","dateText":"","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r005","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-08-04","dateEnd":"","dateText":"","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r006","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-09-15","dateEnd":"","dateText":"","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r007","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-10-06","dateEnd":"","dateText":"","ppl":null,"id":"1236770","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r008","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-11-17","dateEnd":"","dateText":"","ppl":null,"id":"1300843","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r009","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-18","dateEnd":"","dateText":"","ppl":null,"id":"1287900","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r010","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-08-18","dateEnd":"","dateText":"","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r011","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-09-01","dateEnd":"","dateText":"","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r012","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-10-16","dateEnd":"","dateText":"","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r013","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-11-03","dateEnd":"","dateText":"","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r014","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-01","dateEnd":"","dateText":"","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r015","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary I","date":"2026-12-22","dateEnd":"","dateText":"","ppl":null,"id":"1297812","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r016","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-05-28","dateEnd":"","dateText":"","ppl":45,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r017","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-05-29","dateEnd":"","dateText":"","ppl":46,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r018","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-06-11","dateEnd":"","dateText":"","ppl":40,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r019","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-06-12","dateEnd":"","dateText":"","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r020","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-06-13","dateEnd":"","dateText":"","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r021","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-06-04","dateEnd":"","dateText":"","ppl":41,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r022","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-06-05","dateEnd":"","dateText":"","ppl":30,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r023","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-06-08","dateEnd":"","dateText":"","ppl":42,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r024","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-06-09","dateEnd":"","dateText":"","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r025","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QCC","date":"2026-06-10","dateEnd":"","dateText":"","ppl":50,"id":"1256778","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r026","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"2026-05-26","dateEnd":"2026-05-27","dateText":"26-27/5/2026","ppl":30,"id":"1236870","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r027","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"2026-06-25","dateEnd":"2026-06-26","dateText":"25-26/6/2026","ppl":50,"id":"1236870","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r028","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"2026-07-23","dateEnd":"2026-07-24","dateText":"23-24/7/2026","ppl":30,"id":"1236870","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r029","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"2026-08-05","dateEnd":"2026-08-06","dateText":"5-6/8/2026","ppl":30,"id":"1236870","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r030","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"2026-09-09","dateEnd":"2026-09-10","dateText":"9-10/9/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r031","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"2026-10-07","dateEnd":"2026-10-08","dateText":"7-8/10/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r032","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"2026-11-11","dateEnd":"2026-11-12","dateText":"11-12/11/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r033","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency IC Level","date":"2026-12-09","dateEnd":"2026-12-10","dateText":"9-10/12/2026","ppl":30,"id":"1262908","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r034","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-05-19","dateEnd":"","dateText":"","ppl":22,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r035","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-06-10","dateEnd":"","dateText":"","ppl":50,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r036","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-07-08","dateEnd":"","dateText":"","ppl":49,"id":"1236873","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r037","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-08-10","dateEnd":"","dateText":"","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r038","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-09-17","dateEnd":"","dateText":"","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r039","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-10-15","dateEnd":"","dateText":"","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r040","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-11-19","dateEnd":"","dateText":"","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r041","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J Course","date":"2026-12-14","dateEnd":"","dateText":"","ppl":null,"id":"1236873","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r042","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Genba Training","date":"2026-11-09","dateEnd":"2026-11-12","dateText":"9-12/11/2026","ppl":30,"id":"1262933","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r043","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-05-11","dateEnd":"","dateText":"","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r044","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-06-11","dateEnd":"","dateText":"","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r045","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-07-09","dateEnd":"","dateText":"","ppl":50,"id":"1236822","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r046","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-08-03","dateEnd":"","dateText":"","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r047","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-09-07","dateEnd":"","dateText":"","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r048","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-10-05","dateEnd":"","dateText":"","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r049","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-11-09","dateEnd":"","dateText":"","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r050","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Basic TQM","date":"2026-12-07","dateEnd":"","dateText":"","ppl":null,"id":"1236822","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r051","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup","date":"2026-05-20","dateEnd":"2026-05-22","dateText":"20-22/5/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r052","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup","date":"2026-06-17","dateEnd":"2026-06-19","dateText":"17-19/6/2026","ppl":30,"id":"1262922","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r053","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup","date":"2026-07-15","dateEnd":"2026-07-17","dateText":"15-17/7/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r054","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup","date":"2026-08-19","dateEnd":"2026-08-21","dateText":"19-21/8/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r055","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup","date":"2026-09-28","dateEnd":"2026-09-30","dateText":"28-30/9/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r056","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup","date":"2026-10-26","dateEnd":"2026-10-28","dateText":"26-28/10/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r057","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup","date":"2026-11-25","dateEnd":"2026-11-27","dateText":"25-27/11/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r058","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup","date":"2026-12-16","dateEnd":"2026-12-18","dateText":"16-18/12/2026","ppl":30,"id":"1236861","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r059","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-06-09","dateEnd":"","dateText":"","ppl":49,"id":"1236884","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r060","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-07-03","dateEnd":"","dateText":"","ppl":50,"id":"1236884","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r061","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-08-14","dateEnd":"","dateText":"","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r062","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-09-18","dateEnd":"","dateText":"","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r063","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-10-16","dateEnd":"","dateText":"","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r064","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-11-20","dateEnd":"","dateText":"","ppl":null,"id":"1236884","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r065","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-F Course","date":"2026-12-11","dateEnd":"","dateText":"","ppl":null,"id":"1276472","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r066","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-06-12","dateEnd":"","dateText":"","ppl":30,"id":"1236891","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r067","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-06-24","dateEnd":"","dateText":"","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r068","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-07-10","dateEnd":"","dateText":"","ppl":30,"id":"1276461","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r069","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-08-07","dateEnd":"","dateText":"","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r070","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-09-11","dateEnd":"","dateText":"","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r071","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-10-09","dateEnd":"","dateText":"","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r072","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-11-13","dateEnd":"","dateText":"","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r073","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Advance TQM","date":"2026-12-04","dateEnd":"","dateText":"","ppl":30,"id":"1236891","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r074","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"New R&R For new Foreman","date":"2026-06-25","dateEnd":"","dateText":"","ppl":30,"id":"1262953","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r075","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"AO Competency Sup Level (SMG)","date":"2026-06-24","dateEnd":"2026-06-26","dateText":"24,25,26/6/2026","ppl":30,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r076","req":"none","reqDate":"","remark":""},{"co":"TH","course":"PSDM","date":"2026-07-16","dateEnd":"2026-07-17","dateText":"16-17/7/2026","ppl":16,"id":"1262971","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r077","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"English Workshop for Beginner","date":"2026-03-06","dateEnd":"","dateText":"","ppl":38,"id":"1213281","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r078","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"QC-J","date":"2026-07-23","dateEnd":"","dateText":"","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r079","req":"none","reqDate":"","remark":""},{"co":"TH","course":"QC-J","date":"2026-08-18","dateEnd":"","dateText":"","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r080","req":"none","reqDate":"","remark":""},{"co":"TH","course":"QC-J","date":"2026-09-23","dateEnd":"","dateText":"","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r081","req":"none","reqDate":"","remark":""},{"co":"TH","course":"QC-J","date":"2026-10-21","dateEnd":"","dateText":"","ppl":50,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r082","req":"none","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-06-08","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r083","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-06-10","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r084","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-07-07","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r085","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-07-16","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r086","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-08-10","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r087","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-08-27","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r088","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-09-10","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r089","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-09-23","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r090","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-10-08","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r091","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-10-27","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r092","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-11-10","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r093","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-11-19","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r094","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-12-10","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r095","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Honda Elementary I","date":"2026-12-21","dateEnd":"","dateText":"","ppl":50,"id":"1262580","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r096","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Root Cause Analysis (RCA)","date":"2026-08-03","dateEnd":"","dateText":"","ppl":30,"id":"1294272","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r097","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-04-24","dateEnd":"","dateText":"","ppl":50,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r098","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-05-12","dateEnd":"","dateText":"","ppl":50,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r099","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-06-23","dateEnd":"","dateText":"","ppl":38,"id":"1236794","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r100","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-07-21","dateEnd":"","dateText":"","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r101","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-08-25","dateEnd":"","dateText":"","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r102","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-09-29","dateEnd":"","dateText":"","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r103","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-10-27","dateEnd":"","dateText":"","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r104","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-11-24","dateEnd":"","dateText":"","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r105","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-22","dateEnd":"","dateText":"","ppl":null,"id":"1236794","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r106","req":"ok","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-08-11","dateEnd":"","dateText":"","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r107","req":"none","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-09-08","dateEnd":"","dateText":"","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r108","req":"none","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-10-09","dateEnd":"","dateText":"","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r109","req":"none","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-11-13","dateEnd":"","dateText":"","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r110","req":"none","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-18","dateEnd":"","dateText":"","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r111","req":"none","reqDate":"","remark":""},{"co":"TH","course":"Elementary II","date":"2026-12-25","dateEnd":"","dateText":"","ppl":null,"id":"","report":false,"dept":false,"receipt":false,"cert":false,"id_":"r112","req":"none","reqDate":"","remark":""},{"co":"HRST","course":"PDCA Approach and Implementation","date":"2026-03-12","dateEnd":"","dateText":"","ppl":30,"id":"1222002","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r113","req":"ok","reqDate":"","remark":""},{"co":"HRST","course":"Predict Product Lifecycle with Machine Learning","date":"2026-03-20","dateEnd":"","dateText":"","ppl":30,"id":"1225976","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r114","req":"ok","reqDate":"","remark":""},{"co":"HRST","course":"Business Disruption and Resilience","date":"2026-03-23","dateEnd":"","dateText":"","ppl":10,"id":"1225989","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r115","req":"ok","reqDate":"","remark":""},{"co":"HRST","course":"ระเบียบวิธีวิจัย","date":"2026-03-30","dateEnd":"","dateText":"","ppl":10,"id":"1226156","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r116","req":"ok","reqDate":"","remark":""},{"co":"HRST","course":"การประยุกต์ใช้ การวิเคราะห์แนวโน้มลักษณะความล้มเหลวและผลกระทบ (Application of FMEA ๔th Edition)","date":"2026-04-20","dateEnd":"","dateText":"","ppl":30,"id":"1235672","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r117","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"CATIA V5 Fundamentals Course (ความรู้พื้นฐานโปรแกรม CATIA V5)","date":"2026-01-12","dateEnd":"2026-01-16","dateText":"12-16-Jan-26","ppl":1,"id":"474879","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r118","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"Catia V.6 Course (ความรู้เกี่ยวกับโปรแกรม Catia V.6)","date":"2026-01-12","dateEnd":"2026-01-16","dateText":"12-16-Jan-26","ppl":1,"id":"474880","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r119","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"เทคนิคและเครื่องมือในการสำรวจและวิเคราะห์ความต้องการของพนักงาน (Employee Needs Assessment Tools)","date":"2026-02-28","dateEnd":"","dateText":"","ppl":8,"id":"1198714","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r120","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"หลักสูตร AO Competency Training (SUP Level) (การสร้างสมรรถนะในการทำงาน สำหรับพนักงานระดับหัวหน้างาน)","date":"2026-02-19","dateEnd":"","dateText":"","ppl":13,"id":"1205295","report":true,"dept":true,"receipt":false,"cert":false,"id_":"r121","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"๔W Genba Training (เรียนรู้กระบวนการผลิตรถยนต์) Batch ๑","date":"2026-08-17","dateEnd":"2026-08-20","dateText":"17-20-Aug-26","ppl":4,"id":"1205581","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r122","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"๔W Genba Training (ฺเรียนรู้กระบวนการผลิตรถยนต์) Batch ๒","date":"2027-01-25","dateEnd":"2027-01-28","dateText":"25-28-Jan-27","ppl":4,"id":"1205651","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r123","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"๒W Genba Training (ฺเรียนรู้กระบวนการผลิตรถจักรยานยนต์) Batch ๑","date":"2026-11-09","dateEnd":"2026-11-12","dateText":"9-12-Nov-26","ppl":2,"id":"1205665","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r124","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"๒W Genba Training (ฺเรียนรู้กระบวนการผลิตรถจักรยานยนต์) Batch ๒","date":"2027-02-08","dateEnd":"2027-02-11","dateText":"8-11-Feb-27","ppl":2,"id":"1205672","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r125","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"Catia V.๖ Course (ความรู้เกี่ยวกับโปรแกรม Catia V.๖)","date":"2026-03-23","dateEnd":"2026-03-27","dateText":"23-27-Mar-26","ppl":1,"id":"482066","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r126","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"Catia V.6 Course (ความรู้เกี่ยวกับโปรแกรม Catia V.6)","date":"2026-03-23","dateEnd":"2026-03-27","dateText":"23-27-Mar-26","ppl":1,"id":"484276","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r127","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"การเจรจาต่อรอง สำหรับงานจัดซื้อจัดจ้างสมัยใหม","date":"2026-03-23","dateEnd":"","dateText":"","ppl":1,"id":"485929","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r128","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"การพัฒนาผู้บริหารยุคใหม่ (Executive Mini MBA)","date":"2026-06-06","dateEnd":"2026-09-26","dateText":"6-June-26 to 26-Sep-26","ppl":2,"id":"495377","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r129","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"Effectiveness QCC activity (การควบคุมคุณภาพด้วยกิจกรรม QCC)","date":"2026-08-06","dateEnd":"","dateText":"","ppl":24,"id":"1252478","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r130","req":"ok","reqDate":"","remark":""},{"co":"EGAS","course":"การสื่อสาร และการนำเสนออย่างมืออาชีพ (Professional Communication & Presentation Skills)","date":"2026-07-07","dateEnd":"","dateText":"","ppl":1,"id":"501736","report":true,"dept":false,"receipt":false,"cert":false,"id_":"r131","req":"ok","reqDate":"","remark":""}];
 
 /* ================= config & github io ================= */
 const CFG_KEY='dsd_cfg';
@@ -240,9 +272,10 @@ async function loadData(showToast){
   sync('กำลังโหลด…');
   try{
     const f=await ghGet('data.json');
-    if(f){data=JSON.parse(decodeURIComponent(escape(atob(f.content))));dataSha=f.sha}
+    if(f){data=JSON.parse(decodeURIComponent(escape(atob(f.content))));dataSha=f.sha;migrate()}
     else{
-      data={users:{main:null,supports:[]},runs:SEED};dataSha=null;
+      data={users:{main:null,supports:[]},settings:{leadDays:30,reportDays:60},runs:SEED};dataSha=null;
+      migrate();
       await saveData('init from Excel seed');
       toast('สร้างข้อมูลเริ่มต้นจากไฟล์ Excel — '+SEED.length+' รุ่น');
     }
@@ -269,23 +302,70 @@ const esc=s=>String(s??'').replace(/[<>&"]/g,m=>({'<':'&lt;','>':'&gt;','&':'&am
 
 /* ================= model ================= */
 const CO={TH:'TH',HRST:'HRS-T',EGAS:'EGAS'};
-/* ขั้นตอน DSD: id (ได้ ID อนุมัติก่อนอบรม) → report (ยื่นรายงาน) → dept (กรมพัฒฯ อนุมัติ) → receipt → cert */
+
+/* ── ระยะที่ 1: ขอรับรองหลักสูตร (ก่อนอบรม) ─────────────────────────
+   none = ยังไม่ยื่น · sent = ยื่นแล้ว รอกรมรับรอง · ok = รับรองแล้ว (มีเลข ID)  */
+const REQ={none:'ยังไม่ยื่นขอรับรอง',sent:'ยื่นแล้ว รอกรมรับรอง',ok:'รับรองหลักสูตรแล้ว'};
+
+/* ── ระยะที่ 2: หลังอบรม ───────────────────────────────────────── */
 const STEPS=[
   {k:'report',nm:'ยื่นรายงานการฝึก'},
   {k:'dept',nm:'กรมพัฒฯ อนุมัติรายงาน'},
   {k:'receipt',nm:'ใบเสร็จ'},
   {k:'cert',nm:'หนังสือรับรอง'},
 ];
+const SET=()=>data.settings||(data.settings={leadDays:30,reportDays:60});
 const today=()=>new Date().toISOString().slice(0,10);
-const isPast=r=>r.date&&r.date<today();
-const overdue=r=>isPast(r)&&!r.report;                    // อบรมแล้ว ยังไม่ยื่นรายงาน
-const soonNoId=r=>!r.id&&r.date&&!isPast(r)&&daysTo(r.date)<=30;  // ใกล้อบรมแต่ยังไม่มี ID
-const daysTo=s=>Math.round((new Date(s)-new Date(today()))/864e5);
-function fD(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`}
+const daysTo=s=>ISO(s)?Math.round((new Date(s)-new Date(today()))/864e5):null;
+const ISO=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'')?s:null;   // กันวันที่รูปแบบแปลกจากไฟล์ Excel
+const addD=(s,n)=>{if(!ISO(s))return null;const d=new Date(s);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+const endD=r=>ISO(r.dateEnd)||ISO(r.date);                 // อบรมหลายวัน — นับกำหนดรายงานจากวันสุดท้าย
+const isPast=r=>!!endD(r)&&endD(r)<today();
+function fD(s){if(!ISO(s))return s||'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`}
+function fRange(r){return r.dateEnd&&r.dateEnd!==r.date?fD(r.date)+' – '+fD(r.dateEnd):fD(r.date)}
+
+/* กำหนดส่ง — ตั้งค่าได้ที่ปุ่ม "ตั้งค่า" */
+const reqDue=r=>addD(r.date,-SET().leadDays);       // ยื่นขอรับรอง ก่อนวันเริ่มอบรม
+const reportDue=r=>addD(endD(r),SET().reportDays);  // ยื่นรายงาน หลังวันอบรมวันสุดท้าย
+const overdue=r=>isPast(r)&&!r.report;
+
+/* ถังงาน — ใช้ทั้งไทล์สรุปด้านบน ตัวกรอง และการแจ้งเตือน */
+function bucket(r){
+  if((r.req||'none')==='none')return'noreq';
+  if(r.req==='sent')return'waitapv';
+  if(!r.report)return isPast(r)?'noreport':'ready';
+  if(!r.dept)return'waitdept';
+  if(!r.receipt||!r.cert)return'waitdoc';
+  return'done';
+}
+const BUCKET={
+  noreq:{t:'ยังไม่ยื่นขอรับรอง',cl:'alert'},
+  waitapv:{t:'รอกรมรับรองหลักสูตร',cl:'wait'},
+  ready:{t:'รับรองแล้ว รออบรม',cl:'ok'},
+  noreport:{t:'ค้างยื่นรายงาน',cl:'alert'},
+  waitdept:{t:'รอกรมอนุมัติรายงาน',cl:'wait'},
+  waitdoc:{t:'รอใบเสร็จ / หนังสือรับรอง',cl:'wait'},
+  done:{t:'เสร็จสิ้น',cl:'ok'},
+};
 function lastStatus(r){
-  if(!r.id)return{t:'รอ ID อนุมัติ',cl:isPast(r)||soonNoId(r)?'alert':'wait'};
-  for(const s of STEPS)if(!r[s.k])return{t:'รอ'+s.nm,cl:s.k==='report'&&overdue(r)?'alert':'wait'};
-  return{t:'เสร็จสิ้น',cl:'ok'};
+  const b=bucket(r),o={...BUCKET[b]};
+  if(b==='noreq'){const d=daysTo(reqDue(r));
+    if(d!==null&&d<=0)o.t='เลยกำหนดยื่นขอรับรอง';
+    else if(d!==null&&d<=14)o.t=`ยังไม่ยื่นขอรับรอง · เหลือ ${d} วัน`;}
+  if(b==='waitapv'&&isPast(r)){o.cl='alert';o.t='อบรมแล้วแต่ยังไม่ได้รับรอง'}
+  if(b==='noreport'){const d=daysTo(reportDue(r));
+    o.t=d!==null&&d<0?`เลยกำหนดยื่นรายงาน ${-d} วัน`:`ค้างยื่นรายงาน · เหลือ ${d} วัน`;}
+  return o;
+}
+/* migrate ข้อมูลเวอร์ชันเดิม (มีแค่ช่อง id) */
+function migrate(){
+  SET();
+  for(const r of data.runs){
+    if(r.req===undefined)r.req=r.id?'ok':'none';
+    if(r.reqDate===undefined)r.reqDate='';
+    if(r.dateEnd===undefined)r.dateEnd='';
+    if(!ISO(r.date)&&r.date){r.dateText=r.dateText||r.date;r.date=''}
+  }
 }
 
 /* ================= users (Main 1 คน / Support หลายคน · ตั้งชื่อเอง · ล็อกถาวร) ================= */
@@ -360,43 +440,78 @@ function requireUser(){
 function notifItems(){
   const out=[];
   for(const r of data.runs){
-    if(overdue(r))out.push({r,hot:daysTo(r.date)<-14,kind:'report',
-      t1:`${CO[r.co]} · ${r.course}`,t2:`อบรม ${fD(r.date)} แล้ว ยังไม่ยื่นรายงาน`,when:`${-daysTo(r.date)} วัน`,order:daysTo(r.date)});
-    if(soonNoId(r))out.push({r,hot:daysTo(r.date)<=7,kind:'id',
-      t1:`${CO[r.co]} · ${r.course}`,t2:`อบรม ${fD(r.date)} — ยังไม่มี ID อนุมัติ (ต้องยื่นก่อนอบรม)`,when:`อีก ${daysTo(r.date)} วัน`,order:daysTo(r.date)});
+    const b=bucket(r),nm=`${CO[r.co]} · ${r.course}`;
+    if(b==='noreq'){
+      const d=daysTo(reqDue(r));
+      if(d===null)out.push({r,hot:false,kind:'req',t1:nm,t2:'ยังไม่ยื่นขอรับรอง — ยังไม่ระบุวันอบรม',when:'',order:9998});
+      else if(d<=14)out.push({r,hot:d<=3,kind:'req',t1:nm,
+        t2:`อบรม ${fRange(r)} · ต้องยื่นขอรับรองภายใน ${fD(reqDue(r))}`,
+        when:d<0?`เลย ${-d} วัน`:d===0?'วันนี้':`อีก ${d} วัน`,order:d});
+    }
+    if(b==='waitapv'&&isPast(r))out.push({r,hot:true,kind:'req',t1:nm,
+      t2:`อบรม ${fRange(r)} ผ่านไปแล้ว แต่กรมยังไม่รับรองหลักสูตร — ตามเรื่องด่วน`,when:'',order:-999});
+    if(b==='noreport'){
+      const d=daysTo(reportDue(r));
+      out.push({r,hot:d<=14,kind:'rep',t1:nm,
+        t2:`อบรม ${fRange(r)} · ครบกำหนดยื่นรายงาน ${fD(reportDue(r))}`,
+        when:d<0?`เลย ${-d} วัน`:`เหลือ ${d} วัน`,order:d});
+    }
   }
   return out.sort((a,b)=>a.order-b.order);
 }
 function renderNotif(){
   const items=notifItems(),badge=document.getElementById('bellBadge'),p=document.getElementById('notifPanel');
+  const hot=items.filter(x=>x.hot).length;
   badge.style.display=items.length?'flex':'none';badge.textContent=items.length;
+  badge.style.background=hot?'var(--alert)':'var(--wait)';
   if(!items.length){p.innerHTML='<div class="np-head">การแจ้งเตือน</div><div class="np-empty">ไม่มีรายการต้องเร่ง</div>';return}
-  const rep=items.filter(x=>x.kind==='report'),nid=items.filter(x=>x.kind==='id');
+  const req=items.filter(x=>x.kind==='req'),rep=items.filter(x=>x.kind==='rep');
   const row=x=>`<div class="np-item" onclick="closeNotif();openDrawer('${x.r.id_}')">
     <span class="np-ico ${x.hot?'hot':'warn'}"></span>
     <span class="np-txt"><span class="np-t1">${esc(x.t1)}</span><span class="np-t2">${esc(x.t2)}</span></span>
     <span class="np-when">${x.when}</span></div>`;
   p.innerHTML='<div class="np-head">การแจ้งเตือน</div>'
-    +(rep.length?'<div class="np-sect">ค้างยื่นรายงาน — ยิ่งช้ายิ่งเสี่ยงไม่ได้รับรอง</div>'+rep.map(row).join(''):'')
-    +(nid.length?'<div class="np-sect">รอ ID อนุมัติ — ต้องยื่นก่อนวันอบรม</div>'+nid.map(row).join(''):'');
+    +(req.length?`<div class="np-sect">ก่อนอบรม — ขอรับรองหลักสูตร (ล่วงหน้า ${SET().leadDays} วัน)</div>`+req.map(row).join(''):'')
+    +(rep.length?`<div class="np-sect">หลังอบรม — ยื่นรายงานภายใน ${SET().reportDays} วัน</div>`+rep.map(row).join(''):'');
 }
 function toggleNotif(e){e.stopPropagation();document.getElementById('notifPanel').classList.toggle('open')}
 function closeNotif(){document.getElementById('notifPanel').classList.remove('open')}
 document.addEventListener('click',e=>{if(!e.target.closest('#bellWrap'))closeNotif()});
 
 /* ================= render ================= */
-let cofil='ALL';
+let cofil='ALL', bfil='ALL';
 document.querySelectorAll('#cofil button').forEach(b=>b.onclick=()=>{
   cofil=b.dataset.c;
   document.querySelectorAll('#cofil button').forEach(x=>x.classList.toggle('on',x===b));
   render();
 });
+function setB(b){bfil=b;render()}
 const MTH=['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TILES=[
+  ['ALL','ทั้งหมด',''],
+  ['noreq','ยังไม่ยื่นขอรับรอง','alert'],
+  ['waitapv','รอกรมรับรอง','wait'],
+  ['noreport','ค้างยื่นรายงาน','alert'],
+  ['waitdept','รอกรมอนุมัติรายงาน','wait'],
+  ['waitdoc','รอปิดเอกสาร','wait'],
+  ['ready','รออบรม','ok'],
+  ['done','เสร็จสิ้น','ok'],
+];
+function renderTiles(scope){
+  const c={};for(const r of scope)c[bucket(r)]=(c[bucket(r)]||0)+1;
+  document.getElementById('tiles').innerHTML=TILES.map(([k,t,cl])=>{
+    const n=k==='ALL'?scope.length:(c[k]||0);
+    return`<button class="tile ${cl} ${bfil===k?'on':''}" onclick="setB('${k}')">
+      <b>${n}</b><span>${t}</span></button>`;
+  }).join('');
+}
 function render(){
   renderNotif();
   const tb=document.getElementById('rows');
   const q=document.getElementById('q').value.trim().toLowerCase();
-  let rs=data.runs.filter(r=>cofil==='ALL'||r.co===cofil);
+  const scope=data.runs.filter(r=>cofil==='ALL'||r.co===cofil);
+  renderTiles(scope);
+  let rs=scope.filter(r=>bfil==='ALL'||bucket(r)===bfil);
   if(q)rs=rs.filter(r=>(r.course+' '+(r.id||'')).toLowerCase().includes(q));
   rs.sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
   if(!rs.length){tb.innerHTML='<tr><td colspan="7" style="color:var(--sub);text-align:center;padding:30px">ไม่พบรายการ</td></tr>';return}
@@ -408,14 +523,21 @@ function render(){
       const lbl=mk==='no'?'ไม่ระบุวันที่':MTH[+mk.slice(5)]+' '+(+mk.slice(0,4)+543);
       html+=`<tr class="mrow"><td colspan="7">${lbl}</td></tr>`;
     }
-    const st=lastStatus(r);
-    const dots=STEPS.map(s=>`<span class="dot ${r[s.k]?'ok':(s.k==='report'&&overdue(r)?'hot':'wait')}" title="${s.nm}"></span>`).join('');
-    html+=`<tr class="${overdue(r)?'late':''}" onclick="openDrawer('${r.id_}')">
+    const b=bucket(r),st=lastStatus(r),hot=st.cl==='alert';
+    const rq=r.req||'none';
+    const rqChip=rq==='ok'
+      ? `<span class="chip ok">✓ รับรองแล้ว</span><br><span style="font-size:11.5px;color:var(--sub)">ID ${esc(r.id)||'—'}</span>`
+      : rq==='sent'
+      ? `<span class="chip wait">ยื่นแล้ว รอรับรอง</span>${r.reqDate?`<br><span style="font-size:11.5px;color:var(--sub)">ยื่น ${fD(r.reqDate)}</span>`:''}`
+      : `<span class="chip alert">✕ ยังไม่ยื่น</span>${r.date?`<br><span style="font-size:11.5px;color:var(--sub)">ภายใน ${fD(reqDue(r))}</span>`:''}`;
+    const dots=`<span class="dot ${rq==='ok'?'ok':rq==='sent'?'wait':'hot'}" title="ขอรับรองหลักสูตร : ${REQ[rq]}"></span>`
+      +STEPS.map(s=>`<span class="dot ${r[s.k]?'ok':(s.k==='report'&&b==='noreport'?'hot':'wait')}" title="${s.nm}"></span>`).join('');
+    html+=`<tr class="${hot?'late':''}" onclick="openDrawer('${r.id_}')">
       <td><span class="co ${r.co}">${CO[r.co]}</span></td>
       <td class="cname">${esc(r.course)}</td>
-      <td class="cdate">${fD(r.date)}</td>
+      <td class="cdate">${fRange(r)}${r.dateText?`<br><span style="font-size:11px">${esc(r.dateText)}</span>`:''}</td>
       <td>${r.ppl??''}</td>
-      <td style="font-size:12.5px">${esc(r.id)||'<span style="color:var(--none)">—</span>'}</td>
+      <td style="line-height:1.5">${rqChip}</td>
       <td><div class="dots">${dots}</div></td>
       <td><span class="chip ${st.cl}">${st.t}</span></td>`;
   }
@@ -427,27 +549,53 @@ const cur=()=>data.runs.find(x=>x.id_===currentId);
 function openDrawer(id){
   currentId=id;
   const r=cur();if(!r)return;
+  const rq=r.req||'none';
+  const dRq=daysTo(reqDue(r)), dRep=daysTo(reportDue(r));
   const stepRows=STEPS.map(s=>{
     const by=(r.by||{})[s.k];
     const ts=r[s.k]&&by?`<span class="ts">${esc(by)}</span>`:'';
-    return`<div class="step"><span class="nm">${s.nm}</span>${ts}
+    const due=s.k==='report'&&!r.report&&r.date
+      ? `<span class="ts" style="color:${dRep<0?'var(--alert)':dRep<=14?'var(--wait)':'var(--sub)'}">ครบกำหนด ${fD(reportDue(r))}${dRep<0?` · เลย ${-dRep} วัน`:` · เหลือ ${dRep} วัน`}</span>`:'';
+    return`<div class="step"><span class="nm">${s.nm}</span>${due}${ts}
       <input type="checkbox" ${r[s.k]?'checked':''} onchange="setStep('${s.k}',this.checked)"></div>`;
   }).join('');
+  const sameCourse=data.runs.filter(x=>x!==r&&x.co===r.co&&x.course===r.course&&(x.req||'none')!=='ok').length;
   document.getElementById('drawer').innerHTML=`
     <div class="dhead"><h2><span class="co ${r.co}">${CO[r.co]}</span> &nbsp;${esc(r.course)}</h2>
       <button class="btn btn-ghost" onclick="closeDrawer()">✕</button></div>
     <div class="dbody">
+      <div class="sect"><h3>1 · ขอรับรองหลักสูตร (ก่อนอบรม)</h3>
+        <div class="reqbox ${rq}">
+          <div class="reqline">
+            <span class="reqdot"></span>
+            <b>${REQ[rq]}</b>
+            ${r.date&&rq!=='ok'?`<span class="ts" style="margin-left:auto;color:${dRq<0?'var(--alert)':dRq<=14?'var(--wait)':'var(--sub)'}">
+              ต้องยื่นภายใน ${fD(reqDue(r))}${dRq<0?` · เลย ${-dRq} วัน`:` · เหลือ ${dRq} วัน`}</span>`:''}
+          </div>
+        </div>
+        <div class="grid2" style="margin-top:10px">
+          <div class="frow"><label>สถานะการยื่นขอรับรอง</label>
+            <select onchange="setReq(this.value)">${Object.entries(REQ).map(([k,v])=>`<option value="${k}" ${rq===k?'selected':''}>${v}</option>`).join('')}</select></div>
+          <div class="frow"><label>วันที่ยื่นขอรับรอง</label><input type="date" value="${r.reqDate||''}" onchange="editField('reqDate',this.value)"></div>
+        </div>
+        <div class="frow"><label>เลข ID รับรองหลักสูตร (กรอกแล้วสถานะเปลี่ยนเป็น "รับรองแล้ว" อัตโนมัติ)</label>
+          <input inputmode="numeric" value="${esc(r.id)}" onchange="setId(this.value.trim())"></div>
+        ${rq==='ok'&&r.id&&sameCourse?`<button class="btn btn-ghost" style="width:100%" onclick="applyIdAll()">
+          ใช้ ID ${esc(r.id)} กับรุ่นอื่นของหลักสูตรนี้ที่ยังไม่ได้รับรอง (${sameCourse} รุ่น)</button>`:''}
+      </div>
+
+      <div class="sect"><h3>2 · หลังอบรม</h3>${stepRows}</div>
+
       <div class="sect"><h3>ข้อมูลรุ่นอบรม</h3>
         <div class="frow"><label>ชื่อหลักสูตร</label><input value="${esc(r.course)}" onchange="editField('course',this.value)"></div>
         <div class="grid2">
           <div class="frow"><label>บริษัท</label>
             <select onchange="editField('co',this.value)">${Object.entries(CO).map(([k,v])=>`<option value="${k}" ${r.co===k?'selected':''}>${v}</option>`).join('')}</select></div>
-          <div class="frow"><label>วันที่อบรม (ค.ศ.)</label><input type="date" value="${r.date||''}" onchange="editField('date',this.value)"></div>
+          <div class="frow"><label>วันที่เริ่มอบรม (ค.ศ.)</label><input type="date" value="${r.date||''}" onchange="editField('date',this.value)"></div>
+          <div class="frow"><label>วันสุดท้าย (ถ้าอบรมหลายวัน)</label><input type="date" value="${r.dateEnd||''}" onchange="editField('dateEnd',this.value)"></div>
           <div class="frow"><label>จำนวนคน</label><input type="number" min="0" value="${r.ppl??''}" onchange="editField('ppl',this.value?+this.value:null)"></div>
-          <div class="frow"><label>ID อนุมัติยื่นก่อนอบรม</label><input inputmode="numeric" value="${esc(r.id)}" onchange="editField('id',this.value.trim())"></div>
         </div>
       </div>
-      <div class="sect"><h3>ขั้นตอนหลังอบรม</h3>${stepRows}</div>
       <div class="sect"><h3>Remark</h3>
         <textarea rows="3" onchange="editField('remark',this.value)">${esc(r.remark||'')}</textarea></div>
       <div class="sect"><button class="btn btn-ghost" style="color:var(--alert);border-color:var(--alert)" onclick="delRun()">ลบรุ่นนี้</button></div>
@@ -456,9 +604,38 @@ function openDrawer(id){
   document.getElementById('drawer').classList.add('open');
 }
 function closeDrawer(){document.getElementById('ov').classList.remove('open');document.getElementById('drawer').classList.remove('open');currentId=null}
+
+async function setReq(v){
+  if(!requireUser()){openDrawer(currentId);return}
+  const r=cur();
+  if(v==='ok'&&!r.id){toast('กรอกเลข ID รับรองก่อน จึงจะตั้งเป็น "รับรองแล้ว" ได้');openDrawer(r.id_);return}
+  r.req=v;
+  if(v==='sent'&&!r.reqDate)r.reqDate=today();
+  r.by=r.by||{};r.by.req=me()+' '+new Date().toLocaleDateString('en-GB');
+  await saveData(`req=${v} by ${me()} : ${r.course}`);render();openDrawer(r.id_);
+}
+async function setId(v){
+  if(!requireUser()){openDrawer(currentId);return}
+  const r=cur();r.id=v;
+  if(v)r.req='ok'; else if(r.req==='ok')r.req='sent';   // ลบ ID ออก = ถอยกลับเป็นรอรับรอง
+  r.by=r.by||{};r.by.req=me()+' '+new Date().toLocaleDateString('en-GB');
+  await saveData(`id=${v} by ${me()} : ${r.course}`);render();openDrawer(r.id_);
+}
+async function applyIdAll(){
+  if(!requireUser())return;
+  const r=cur();
+  const targets=data.runs.filter(x=>x!==r&&x.co===r.co&&x.course===r.course&&(x.req||'none')!=='ok');
+  if(!confirm(`ใช้ ID ${r.id} กับอีก ${targets.length} รุ่นของ "${r.course}" ?`))return;
+  const stampBy=me()+' '+new Date().toLocaleDateString('en-GB');
+  targets.forEach(x=>{x.id=r.id;x.req='ok';x.by=x.by||{};x.by.req=stampBy});
+  await saveData(`apply id ${r.id} to ${targets.length} runs by ${me()}`);
+  toast(`อัปเดต ${targets.length} รุ่นแล้ว`);render();openDrawer(r.id_);
+}
 async function setStep(k,v){
   if(!requireUser()){openDrawer(currentId);return}
-  const r=cur();r[k]=v;
+  const r=cur();
+  if(v&&(r.req||'none')!=='ok'&&!confirm('หลักสูตรนี้ยังไม่ได้รับรองจากกรม — ยืนยันติ๊กขั้นตอนนี้?')){openDrawer(r.id_);return}
+  r[k]=v;
   r.by=r.by||{};r.by[k]=v?me()+' '+new Date().toLocaleDateString('en-GB'):null;
   await saveData(`${k}=${v} by ${me()} : ${r.course}`);render();openDrawer(r.id_);
 }
@@ -466,6 +643,7 @@ async function editField(f,v){
   if(!requireUser()){openDrawer(currentId);return}
   const r=cur();r[f]=v;
   await saveData(`edit ${f} by ${me()} : ${r.course}`);render();
+  if(f==='date'||f==='dateEnd')openDrawer(r.id_);
 }
 async function delRun(){
   if(!requireUser())return;
@@ -487,13 +665,16 @@ async function addRun(){
     co:document.getElementById('aCo').value,
     course:name,
     date:document.getElementById('aDate').value,
+    dateEnd:document.getElementById('aEnd').value,dateText:'',
     ppl:document.getElementById('aPpl').value?+document.getElementById('aPpl').value:null,
     id:document.getElementById('aId').value.trim(),
-    report:false,dept:false,receipt:false,cert:false
+    req:document.getElementById('aId').value.trim()?'ok':document.getElementById('aReq').value,
+    reqDate:'',
+    report:false,dept:false,receipt:false,cert:false,remark:''
   });
   await saveData('add run by '+me()+': '+name);
   closeModal('mAdd');
-  ['aName','aDate','aPpl','aId'].forEach(i=>document.getElementById(i).value='');
+  ['aName','aDate','aEnd','aPpl','aId'].forEach(i=>document.getElementById(i).value='');
   render();
 }
 
@@ -513,7 +694,7 @@ function importJSON(){
       const d=JSON.parse(await f.text());
       if(!Array.isArray(d.runs))throw 0;
       if(!confirm(`นำเข้า ${d.runs.length} รุ่น แทนที่ข้อมูลปัจจุบันทั้งหมด?`))return;
-      data=d;
+      data=d;migrate();
       await saveData('restore from backup by '+me());
       renderUserSel();render();toast('นำเข้าข้อมูลสำเร็จ');
     }catch(e){toast('ไฟล์ไม่ถูกต้อง — ต้องเป็นไฟล์จากปุ่ม "สำรองข้อมูล"')}
@@ -523,12 +704,14 @@ function importJSON(){
 function exportCSV(){
   // ponytail: CSV UTF-8 BOM เปิดใน Excel ได้ตรง ไม่ต้องพึ่งไลบรารี xlsx
   const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
-  const head=['บริษัท','หลักสูตร','วันที่อบรม','จำนวนคน','ID อนุมัติ',
-    ...STEPS.map(s=>s.nm),'สถานะล่าสุด','Remark'];
+  const head=['บริษัท','หลักสูตร','วันที่เริ่มอบรม','วันสุดท้าย','จำนวนคน',
+    'สถานะขอรับรอง','วันที่ยื่นขอรับรอง','กำหนดยื่นขอรับรอง','ID รับรองหลักสูตร',
+    ...STEPS.map(s=>s.nm),'กำหนดยื่นรายงาน','สถานะล่าสุด','Remark'];
   const cell=(r,k)=>r[k]?((r.by||{})[k]||'✓'):'';
   const rows=[...data.runs].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(r=>[
-    CO[r.co],r.course,r.date,r.ppl,r.id,
-    ...STEPS.map(s=>cell(r,s.k)),lastStatus(r).t,r.remark||''
+    CO[r.co],r.course,r.date,r.dateEnd||'',r.ppl,
+    REQ[r.req||'none'],r.reqDate||'',reqDue(r)||'',r.id,
+    ...STEPS.map(s=>cell(r,s.k)),reportDue(r)||'',lastStatus(r).t,r.remark||''
   ].map(q).join(','));
   dlBlob(new Blob(['\uFEFF'+head.map(q).join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'}),`dsd-tracker_${stamp()}.csv`);
   toast('ส่งออก Excel (CSV) แล้ว');
@@ -537,6 +720,8 @@ function exportCSV(){
 /* ================= setup ================= */
 function openSetup(){
   if(cfg){document.getElementById('sOwner').value=cfg.owner;document.getElementById('sRepo').value=cfg.repo;document.getElementById('sToken').value=cfg.token}
+  document.getElementById('sLead').value=SET().leadDays;
+  document.getElementById('sRep').value=SET().reportDays;
   document.getElementById('mSetup').classList.add('open');
 }
 async function saveSetup(){
@@ -545,8 +730,13 @@ async function saveSetup(){
        token:document.getElementById('sToken').value.trim()};
   if(!cfg.owner||!cfg.repo||!cfg.token){toast('กรอกให้ครบทั้ง 3 ช่อง');return}
   localStorage.setItem(CFG_KEY,JSON.stringify(cfg));
+  const lead=+document.getElementById('sLead').value||30, rep=+document.getElementById('sRep').value||60;
   closeModal('mSetup');
   await loadData(true);
+  if(data.runs.length&&(SET().leadDays!==lead||SET().reportDays!==rep)){
+    data.settings={leadDays:lead,reportDays:rep};
+    await saveData('update deadline settings');render();
+  }
 }
 
 applyLock();
