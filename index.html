@@ -33,7 +33,12 @@ header h1 span{color:var(--red)}
 main{max-width:1200px;margin:0 auto;padding:18px 20px 60px}
 .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 #syncState{font-size:12px;color:var(--sub)}
-.search{width:220px}
+.qwrap{position:relative;display:inline-block}
+.search{width:220px;padding-right:26px}
+.search::-webkit-search-cancel-button{display:none}
+#qx{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:none;color:var(--sub);font-size:12px;line-height:1;padding:2px 4px}
+#qx:hover{color:var(--red)}
+.lnk{color:var(--red);text-decoration:underline}
 
 /* company filter chips */
 .cofil{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff}
@@ -167,7 +172,7 @@ tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
       <button data-c="HRST">HRS-T</button>
       <button data-c="EGAS">EGAS</button>
     </div>
-    <input class="search" id="q" placeholder="ค้นหาหลักสูตร / ID" oninput="render()">
+    <span class="qwrap"><input class="search" id="q" type="search" name="dsd-search" autocomplete="off" placeholder="ค้นหาหลักสูตร / ID" oninput="render()"><button id="qx" onclick="document.getElementById('q').value='';render()" title="ล้างคำค้น">✕</button></span>
     <button class="btn btn-ghost" onclick="loadData(true)">รีเฟรช</button>
     <button class="btn btn-ghost" onclick="backupJSON()">สำรองข้อมูล</button>
     <button class="btn btn-ghost" onclick="importJSON()">นำเข้าข้อมูล</button>
@@ -200,7 +205,7 @@ tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
   </div>
   <div class="frow"><label>สถานะขอรับรองหลักสูตร</label>
     <select id="aReq"><option value="none">ยังไม่ยื่นขอรับรอง</option><option value="sent">ยื่นแล้ว รอกรมรับรอง</option><option value="ok">รับรองแล้ว (มี ID)</option></select></div>
-  <div class="frow"><label>เลข ID รับรองหลักสูตร (ถ้ามีแล้ว)</label><input id="aId" inputmode="numeric"></div>
+  <div class="frow"><label>เลข ID รับรองหลักสูตร (ถ้ามีแล้ว)</label><input id="aId" autocomplete="off" inputmode="numeric"></div>
   <div class="mfoot">
     <button class="btn btn-ghost" onclick="closeModal('mAdd')">ยกเลิก</button>
     <button class="btn btn-red" onclick="addRun()">บันทึก</button>
@@ -223,9 +228,9 @@ tbody tr.late{box-shadow:inset 3px 0 0 var(--alert)}
     แล้วสร้าง Fine-grained token ที่ Settings → Developer settings → เลือกเฉพาะ repo นั้น ให้สิทธิ์ Contents: Read and write
     จากนั้นส่งค่า 3 ช่องนี้ให้ทุกคนในทีมกรอกครั้งเดียว)
   </p>
-  <div class="frow"><label>Owner (ชื่อบัญชี GitHub)</label><input id="sOwner"></div>
-  <div class="frow"><label>Repo (ชื่อ private repo เก็บข้อมูล)</label><input id="sRepo"></div>
-  <div class="frow"><label>Token (fine-grained, สิทธิ์ Contents RW เฉพาะ repo นี้)</label><input id="sToken" type="password"></div>
+  <div class="frow"><label>Owner (ชื่อบัญชี GitHub)</label><input id="sOwner" autocomplete="off"></div>
+  <div class="frow"><label>Repo (ชื่อ private repo เก็บข้อมูล)</label><input id="sRepo" autocomplete="off"></div>
+  <div class="frow"><label>Token (fine-grained, สิทธิ์ Contents RW เฉพาะ repo นี้)</label><input id="sToken" autocomplete="new-password" type="password"></div>
   <h2 style="margin:20px 0 8px"><span>กำหนด</span>ส่ง</h2>
   <p class="note" style="margin-bottom:10px">ค่านี้ใช้คำนวณวันครบกำหนดและการแจ้งเตือน — บันทึกร่วมกันทั้งทีม</p>
   <div class="grid2">
@@ -387,7 +392,7 @@ function openUsers(){
   const canAdd=!u.main||me()===u.main;
   document.getElementById('uAdd').innerHTML=canAdd?`
     <div class="frow" style="margin-top:12px"><label>${u.main?'เพิ่ม Support User':'ตั้งชื่อ Main User'} (บันทึกแล้วล็อก แก้ไข/ลบไม่ได้)</label>
-    <div style="display:flex;gap:8px"><input id="uName" maxlength="30">
+    <div style="display:flex;gap:8px"><input id="uName" autocomplete="off" maxlength="30">
     <button class="btn btn-red" style="white-space:nowrap" onclick="addUser()">บันทึกและล็อก</button></div></div>`
     :`<p class="note" style="margin-top:10px">เฉพาะ Main User (${esc(u.main)}) เท่านั้นที่เพิ่มผู้ใช้ได้ — เลือก user แล้วกดล็อกก่อน</p>`;
   document.getElementById('mUsers').classList.add('open');
@@ -509,12 +514,17 @@ function render(){
   renderNotif();
   const tb=document.getElementById('rows');
   const q=document.getElementById('q').value.trim().toLowerCase();
+  document.getElementById('qx').style.display=q?'block':'none';
   const scope=data.runs.filter(r=>cofil==='ALL'||r.co===cofil);
   renderTiles(scope);
   let rs=scope.filter(r=>bfil==='ALL'||bucket(r)===bfil);
   if(q)rs=rs.filter(r=>(r.course+' '+(r.id||'')).toLowerCase().includes(q));
   rs.sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
-  if(!rs.length){tb.innerHTML='<tr><td colspan="7" style="color:var(--sub);text-align:center;padding:30px">ไม่พบรายการ</td></tr>';return}
+  if(!rs.length){
+    const why=q?`ไม่พบรายการที่ตรงกับคำค้น "${esc(q)}" — <a href="#" class="lnk" onclick="document.getElementById('q').value='';render();return false">ล้างคำค้น</a>`
+      :bfil!=='ALL'?`ไม่มีรายการในกลุ่มนี้ — <a href="#" class="lnk" onclick="setB('ALL');return false">ดูทั้งหมด</a>`
+      :'ยังไม่มีรายการ — กด "+ เพิ่มรุ่นอบรม" เพื่อเริ่ม';
+    tb.innerHTML=`<tr><td colspan="7" style="color:var(--sub);text-align:center;padding:30px">${why}</td></tr>`;return}
   let html='',lastM='';
   for(const r of rs){
     const mk=r.date?r.date.slice(0,7):'no';
